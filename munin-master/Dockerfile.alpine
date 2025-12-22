@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: MPL-2.0
+
+# Alpine-based Munin master that generates static HTML/graphs via munin-cron
+
+FROM alpine:3
+
+# Runtime deps:
+#  - munin        : master scripts (munin-cron, munin-{update,graph,html}, etc.)
+#  - munin-node   : shared Munin::Common::* Perl modules (incl. Defaults.pm)
+#  - perl         : interpreter
+#  - rrdtool      : graphing backend
+#  - tzdata       : timezone handling
+#  - gettext-envsubst : provides envsubst used in entrypoint
+#  - perl-log-log4perl : Log::Log4perl used by munin-update
+RUN apk add --no-cache \
+      munin \
+      munin-node \
+      perl \
+      rrdtool \
+      tzdata \
+      gettext-envsubst \
+      perl-log-log4perl
+
+# Ensure munin user/group exists (Alpine may or may not create it with the package)
+RUN addgroup -S munin && adduser -S -D -H -G munin munin || true
+
+# Keep the distro config around, but let us generate our own
+RUN mv /etc/munin/munin.conf /etc/munin/munin.conf.alpine-dist || true
+
+# Copy template + entrypoint
+COPY munin.conf.template /etc/munin/munin.conf.template
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+
+RUN chmod +x /docker-entrypoint.sh \
+    # Make sure directories exist and belong to 'munin'
+    && mkdir -p /var/lib/munin /var/log/munin /var/run/munin /var/www/munin \
+    && chown -R munin:munin /var/lib/munin /var/log/munin /var/run/munin /var/www/munin \
+    # Cronjob for user 'munin' (Alpine: per-user crontabs in /etc/crontabs)
+    && echo "*/5 * * * * /usr/bin/munin-cron" > /etc/crontabs/munin \
+    && chown munin:munin /etc/crontabs/munin
+
+ENTRYPOINT ["/docker-entrypoint.sh"]

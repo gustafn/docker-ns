@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MPL-2.0
+
+# Global Munin master settings (paths are provided via env + envsubst)
+
+dbdir   ${MUNIN_DB_DIR}
+htmldir ${MUNIN_HTML_DIR}
+logdir  ${MUNIN_LOG_DIR}
+rundir  ${MUNIN_RUN_DIR}
+tmpldir ${MUNIN_TPL_DIR}
+
+# Optional: include extra node definitions if you mount /etc/munin/munin-conf.d
+includedir /etc/munin/munin-conf.d
+
+# Simple single-node setup.
+# Adjust via MUNIN_HOSTNAME / MUNIN_NODE_ADDRESS or override munin.conf manually.
+
+[${MUNIN_HOSTNAME}]
+    address ${MUNIN_NODE_ADDRESS}
+    use_node_name yes
