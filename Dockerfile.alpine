@@ -1,0 +1,65 @@
+FROM alpine:latest
+
+# Runtime packages:
+#  - munin-node (munin agent)
+#  - ca-certificates (TLS roots for HTTPS)
+#  - curl (debugging / HTTP checks)
+#  - tcl (for NaviServer-related plugins)
+#  - perl (munin plugins are Perl-based)
+#  - procps-ng (ps, top, etc.)
+RUN apk add --no-cache \
+      munin-node \
+      ca-certificates \
+      su-exec \
+      curl \
+      tcl \
+      perl \
+      perl-net-cidr \
+      perl-dbd-pg \
+      procps-ng \
+      gettext-envsubst \
+      postgresql-client \
+      && mv /etc/munin/munin-node.conf /etc/munin/munin-node.conf.alpine-dist || true
+
+RUN addgroup -S munin 2>/dev/null || true \
+ && adduser -S -D -H -s /sbin/nologin -G munin munin 2>/dev/null || true \
+ && mkdir -p /var/log/munin /var/run/munin \
+ && chown -R munin:munin /var/log/munin /var/run/munin
+
+# Install NaviServer-specific Munin plugins and core Munin plugins
+# using a temporary .build-deps virtual package for git.
+RUN apk add --no-cache --virtual .build-deps git \
+ && mkdir -p /usr/local/munin/lib/plugins /usr/local/share/munin-plugins-ns /usr/share/munin/plugins /opt \
+ \
+ # NaviServer / OpenACS Munin plugins
+ && git clone --depth 1 https://github.com/gustafn/munin-plugins-ns.git /opt/munin-plugins-ns \
+ && cp /opt/munin-plugins-ns/plugins/* /usr/local/munin/lib/plugins/ \
+ && chmod 755 /usr/local/munin/lib/plugins/* \
+ && cp /opt/munin-plugins-ns/tcl/munin.tcl /usr/local/share/munin-plugins-ns/munin.tcl \
+ && chmod 644 /usr/local/share/munin-plugins-ns/munin.tcl \
+ \
+ # Core Munin node plugins (including postgres_*)
+ && git clone --depth 1 https://github.com/munin-monitoring/munin.git /opt/munin-core \
+ && mkdir -p /usr/share/munin/plugins/ \
+ && cp /opt/munin-core/plugins/node.d/* /usr/share/munin/plugins/ || true \
+ && chmod 755 /usr/share/munin/plugins/* \
+ \
+ # Cleanup
+ && rm -rf /opt/munin-plugins-ns /opt/munin-core \
+ && apk del .build-deps
+
+RUN mkdir -p /scripts
+COPY --chmod=755 \
+   oacs-db-env.sh \
+   /scripts/
+
+EXPOSE 4949
+
+COPY munin-node.conf.template naviserver-plugin.conf.template /etc/munin/
+RUN sed -i 's/\r$//' /etc/munin/munin-node.conf.template
+
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
+CMD ["munin-node", "--foreground"]
