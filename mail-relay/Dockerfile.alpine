@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: MPL-2.0
+
+FROM alpine:latest
+
+# Install Postfix + TLS trust store
+RUN apk add --no-cache \
+        postfix \
+        ca-certificates \
+        tzdata \
+        gettext \
+        && mv /etc/postfix/main.cf /etc/postfix/main.cf.alpine-dist || true
+
+# Make sure CA bundle is up to date
+RUN update-ca-certificates
+
+# Expose SMTP port
+EXPOSE 25
+
+# Simple entrypoint: sanity check + foreground Postfix
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+# Provide a fallback, if no /etc/postfix/main.cf is provided via bind mount
+COPY postfix-main.cf.template /etc/postfix/main.cf.template
+
+ 
+ENTRYPOINT ["/docker-entrypoint.sh"]
