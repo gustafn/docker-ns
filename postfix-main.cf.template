@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: MPL-2.0
+# Identify this node
+myhostname = ${HOSTNAME}
+myorigin   = ${POSTFIX_MYORIGIN}
+
+# Don't accept mail *for* this host; just relay outgoing
+mydestination =
+
+inet_interfaces = all
+inet_protocols = ipv4
+
+# Internal networks allowed to relay (Docker network)
+mynetworks = ${POSTFIX_MYNETWORKS}
+
+#smtpd_relay_restrictions = permit_mynetworks defer_unauth_destination
+smtpd_recipient_restrictions = permit_mynetworks, reject_unauth_destination
+
+# We currently use MX lookups, so no relayhost by default
+#relayhost = [${POSTFIX_RELAYHOST}]:${POSTFIX_RELAYPORT}
+
+# TLS (paths can be overridden if needed)
+smtpd_tls_cert_file = ${POSTFIX_TLS_CERT_FILE}
+smtpd_tls_key_file  = ${POSTFIX_TLS_KEY_FILE}
+smtpd_tls_security_level = may
+smtp_tls_security_level  = may
+smtp_tls_loglevel        = 1
+
+maillog_file = /var/log/mail.log
