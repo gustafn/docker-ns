@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: MPL-2.0
+#
+# Template for /etc/munin/munin-node.conf
+# Values are filled in by docker-entrypoint.sh using envsubst.
+
+user root
+group root
+
+log_level 4
+log_file /var/log/munin/munin-node.log
+pid_file /var/run/munin/munin-node.pid
+
+# Don't demonize inside the container
+background 0
+setsid 1
+
+# Node identity (as seen by the master)
+host_name ${MUNIN_HOSTNAME}
+
+# Listen on all interfaces inside the container
+host *
+port 4949
+
+# Allow masters from the configured CIDR(s).
+# You can set MUNIN_ALLOW_CIDR in docker-compose, e.g. "172.18.0.0/16".
+cidr_allow ${MUNIN_ALLOW_CIDR}
+
+# You can still add more allow/deny rules via a bind-mounted config if needed.

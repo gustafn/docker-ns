@@ -1,0 +1,8 @@
+[naviserver_*]
+  env.url ${NS_URL_PATH}
+
+[naviserver_${NS_SERVER_NAME}_*]
+  env.address ${NS_ADDRESS}
+  env.port ${NS_PORT}
+[naviserver_${NS_SERVER_NAME}_responsetime]
+   env.urls / /register/
