@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: MPL-2.0
+#
+# NaviServer with Oracle Instant Client
+#
+# Download reference:
+#     https://www.oracle.com/de/database/technologies/instant-client/downloads.html
+#
+# Modeled after:
+#     https://github.com/Shrinidhikulkarni7/OracleClient_Alpine/blob/master/Dockerfile
+#
+# Warning: this file was automatically generated. Do not modify it.
+
+ARG RELEASE_TAG="latest"
+ARG LOCAL_TAG=""
+FROM gustafn/naviserver:${RELEASE_TAG}-alpine${LOCAL_TAG}
+
+# Make sure to refresh the script (for development only)
+COPY get-naviserver-modules.sh /scripts
+
+ARG extra_packages=""
+RUN dev_packages="git musl-dev gcc make zlib-dev openssl-dev curl bash" && apk add ${dev_packages} ${system_pkgs} libaio \
+   && cd /tmp \
+   && oraArch=$(arch | sed s/aarch64/linux-arm64/ | sed s/x86_64/linuxx64/) \
+   && curl -o instantclient-basiclite.zip https://download.oracle.com/otn_software/linux/instantclient/instantclient-basiclite-${oraArch}.zip -SL \
+   && echo "Downloaded Oracle instantclient-basiclite-${oraArch}.zip size " `ls -l instantclient-basiclite.zip` \   
+   && unzip instantclient-basiclite.zip \
+   && mv instantclient*/ /usr/lib/instantclient \
+   && curl -o instantclient-sdk.zip https://download.oracle.com/otn_software/linux/instantclient/instantclient-sdk-${oraArch}.zip -SL \
+   && echo "Downloaded SDK instantclient-sdk-${oraArch} size " `ls -l instantclient-sdk.zip` \
+   && unzip -o instantclient-sdk.zip \
+   && mv instantclient*/* /usr/lib/instantclient/ \
+   && rm instantclient-basiclite.zip instantclient-sdk.zip \
+   && curl -o instantclient-sqlplus.zip https://download.oracle.com/otn_software/linux/instantclient/instantclient-sqlplus-${oraArch}.zip -SL \
+   && echo "Downloaded SDK instantclient-sqlplus-${oraArch} size " `ls -l instantclient-sqlplus.zip` \
+   && unzip -o instantclient-sqlplus.zip \
+   && mv instantclient*/* /usr/lib/instantclient \
+   && ln -sf /usr/lib/instantclient/lib*so* /usr/lib/ \
+   && ln -sf /usr/lib/instantclient/sqlplus /usr/bin/ \
+   && bash /scripts/get-naviserver-modules.sh -m nsoracle -i \
+   && apk del ${dev_packages}
+
+ENV ORACLE_HOME=/usr/lib/instantclient

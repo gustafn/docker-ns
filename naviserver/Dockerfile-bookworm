@@ -1,0 +1,56 @@
+# SPDX-License-Identifier: MPL-2.0
+#
+# Base NaviServer installation
+#
+# Warning: this file was automatically generated. Do not modify it.
+
+FROM debian:bookworm-slim
+
+RUN apt-get update  && DEBIAN_FRONTEND=noninteractive apt-get install -y locales  && sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen  && dpkg-reconfigure --frontend=noninteractive locales  && update-locale LANG=en_US.UTF-8
+    
+ENV LC_ALL=en_US.UTF-8
+
+# The Makefile passes in the following variables
+#ARG version_ns=GIT       # passed in via --build-arg "version_ns=..."
+#ARG version_tcl=8.6.17   # passed in via --build-arg "version_tcl=..."
+#ARG version_tcllib=1.20  # passed in via --build-arg "version_tcllib=..."
+#ARG version_xotcl=2.4.0  # passed in via --build-arg "version_xotcl=..."
+
+ARG version_ns
+ARG version_tcl
+ARG version_tcllib
+ARG version_xotcl
+
+ARG with_ns_doc=1
+ARG with_system_malloc=1
+ARG with_debug_flags=0
+ARG version_tdom=0.9.6
+ARG ns_modules="nsudp nssmtpd nsstats revproxy nsauthpam"
+ARG system_pkgs=""
+
+RUN addgroup --system nsadmin \
+    && adduser --disabled-password --no-create-home --ingroup nsadmin --gecos "NaviServer Admin" nsadmin \
+    && mkdir -p /scripts
+
+RUN  apt update  && apt upgrade -y && DEBIAN_FRONTEND=noninteractive apt-get -qq install -y --no-install-recommends bash tzdata locales ca-certificates libtcmalloc-minimal4 $system_pkgs  && dev_packages="git patch curl libpam0g-dev"  && DEBIAN_FRONTEND=noninteractive apt-get -qq install -y --no-install-recommends $dev_packages \
+    && git clone https://github.com/gustafn/install-ns.git \
+    && cd install-ns \
+    && with_postgres=0 \
+       version_ns=${version_ns} \
+       with_ns_doc=${with_ns_doc} \
+       with_system_malloc=${with_system_malloc} \
+       with_debug_flags=${with_debug_flags} \
+       version_tcllib=${version_tcllib} \
+       version_xotcl=${version_xotcl} \
+       version_tdom=${version_tdom} \
+       ns_modules=${ns_modules} \
+       bash install-ns.sh build \
+    && rm -rf /usr/local/src \
+    && DEBIAN_FRONTEND=noninteractive apt-get -qq purge -y ${dev_packages} gcc make libpq-dev autoconf automake m4 patch perl libexpat1 && apt-get -qq autoremove -y \
+    && rm -rf /usr/local/src
+
+# The following script is necessary, when later extra modules are
+# loaded. The used script above "install-ns" does not need it.
+
+COPY get-naviserver-modules.sh /scripts
+

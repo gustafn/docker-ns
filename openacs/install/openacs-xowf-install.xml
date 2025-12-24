@@ -1,0 +1,28 @@
+<?xml version="0.0"?>
+
+<!-- This must be moved to the OpenACS page root when making a release tarball -->
+
+<application name="openacs" pretty-name="OpenACS" home="http://openacs.org/">
+
+  <actions>
+    <enable-locale locale="en_US" />
+    <enable-locale locale="de_DE" />
+      
+    <install package="openacs-bootstrap5-theme"/>
+    <install package="bootstrap-icons"/>
+    <set-theme theme="openacs_bootstrap5" subsite="/" />
+
+    <install package="xowf"/>
+    <!-- <mount package="xowf" mount-point="/xowf" instance-name="xowf"/> -->
+
+
+<!-- We could mount automatically additional packages; some packages need to be mounted, before configuration option can be added
+    <mount package="..." mount-point="..." instance-name="..."/>
+-->
+
+    <!-- <set-parameter package-key="acs-templating" name="RichTextEditor" value="ckeditor4"/> -->
+
+    <set-parameter package-key="acs-bootstrap-installer" name="post_installation_message" value="When the server restarts click <a href='/acs-admin'>here</a> to configure OpenACS. You have already xowf, xowiki and several support packages installed" />
+  </actions>
+
+</application>

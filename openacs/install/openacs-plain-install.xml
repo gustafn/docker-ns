@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+
+<!-- This must be moved to the OpenACS page root when making a release tarball -->
+
+<application name="openacs" pretty-name="OpenACS" home="http://openacs.org/">
+
+  <actions>
+    <install package="openacs-bootstrap5-theme"/>
+    <install package="bootstrap-icons"/>
+
+    <set-theme theme="openacs_bootstrap5" subsite="/" />
+
+
+<!-- We could mount automatically additional packages; some packages need to be mounted, before configuration option can be added
+    <mount package="..." mount-point="..." instance-name="..."/>
+-->
+
+    <!-- <set-parameter package-key="acs-templating" name="RichTextEditor" value="ckeditor4"/> -->
+
+    <set-parameter package-key="acs-bootstrap-installer" name="post_installation_message" value="When the server restarts click <a href='/acs-admin'>here</a> to configure OpenACS"/>
+  </actions>
+
+</application>

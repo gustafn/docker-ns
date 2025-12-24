@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: MPL-2.0
+#
+#  NaviServer with PostgreSQL client support.
+#  Install "nsdbpg" on top of the "naviserver" image
+#
+ARG RELEASE_TAG="latest"
+ARG LOCAL_TAG=""
+ARG base_image=gustafn/naviserver:${RELEASE_TAG}-bookworm${LOCAL_TAG}
+FROM ${base_image}
+
+# Make sure to refresh the script (for development only)
+COPY get-naviserver-modules.sh /scripts
+
+
+ARG system_pkgs=""
+RUN  DEBIAN_FRONTEND=noninteractive apt-get -qq install -y libpq5 postgresql-client $system_pkgs  && dev_packages="git gcc make libpq-dev zlib1g-dev curl"  && DEBIAN_FRONTEND=noninteractive apt-get -qq install -y ${dev_packages} \
+   && bash /scripts/get-naviserver-modules.sh -m nsdbpg -i \
+   &&  DEBIAN_FRONTEND=noninteractive apt-get -qq purge -y ${dev_packages}  && DEBIAN_FRONTEND=noninteractive apt-get -qq autoremove -y
+
+

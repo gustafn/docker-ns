@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: MPL-2.0
+#
+# Install OpenACS on top of the "naviserver-pg" image
+#
+# Warning: this file was automatically generated. Do not modify it.
+
+ARG RELEASE_TAG="latest"
+ARG LOCAL_TAG
+ARG base_image=gustafn/naviserver-pg:${RELEASE_TAG}-bookworm${LOCAL_TAG}
+FROM ${base_image}
+
+#
+# Repeat base_image setting, since it was flushed by the "FROM" command above
+#
+ARG RELEASE_TAG="latest"
+ARG LOCAL_TAG=""
+ARG base_image=gustafn/naviserver-pg:${RELEASE_TAG}-bookworm${LOCAL_TAG}
+ENV base_image="$base_image"
+
+ARG oacs_serverroot=/var/www/openacs
+ARG system_pkgs=""
+
+RUN mkdir -p /scripts /docker-entrypoint-initdb.d \
+    && DEBIAN_FRONTEND=noninteractive apt-get -qq install -y grep zip curl file catdoc jq libarchive-tools ${system_packages} \
+    && mkdir -p ${oacs_serverroot}/log \
+    && mkdir -p ${oacs_serverroot}/certificates \
+    && case "$base_image" in \
+         naviserver-pg*) DEBIAN_FRONTEND=noninteractive apt-get -qq install -y postgresql-client ;; \
+         *) true ;; \
+       esac
+
+COPY --chmod=755 \
+   scripts/container-setup-openacs.sh \
+   scripts/get-docker-config.sh \
+   scripts/ensure-secrets.sh \
+   scripts/oacs-db-env.sh \
+   scripts/wait-for-postgres.sh \
+   /scripts/
+COPY scripts/docker-setup.tcl /scripts/
+   
+COPY initdb/init-user-db.sh /docker-entrypoint-initdb.d
+COPY install/openacs-plain-install.xml \
+   install/openacs-xowf-install.xml ${oacs_serverroot}
+
+

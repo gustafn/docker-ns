@@ -14,26 +14,37 @@ IMAGE_NAME      ?= munin-master
 
 # We currently only support an Alpine Dockerfile:
 DOCKERFILE      = Dockerfile.$(BASE)
+INGREDIENTS = \
+  $(DOCKERFILE) \
+  Makefile \
+  $(wildcard *.sh) \
+  $(wildcard *.template)
+
+IMAGE = $(DOCKER_USERNAME)/$(IMAGE_NAME):$(RELEASE_TAG)-$(BASE)$(LOCAL_TAG)
+STAMP = .built-$(BASE)-$(RELEASE_TAG)$(LOCAL_TAG_NORM)
 
 # ----------------------------------------------------------------------
 # Local build (no push)
 # ----------------------------------------------------------------------
-build:
-	docker build \
+build: $(STAMP)
+$(STAMP): $(INGREDIENTS)
+	docker build --no-cache \
 	  --build-arg "RELEASE_TAG=$(RELEASE_TAG)" \
-	  -t $(DOCKER_USERNAME)/$(IMAGE_NAME):$(RELEASE_TAG) \
+	  -t $(IMAGE) \
 	  -f $(DOCKERFILE) .
+	touch $@
 
 # ----------------------------------------------------------------------
 # Multi-arch build & push using buildx
 # ----------------------------------------------------------------------
-buildx:
-	docker buildx build \
+buildx: $(STAMP).pushed
+$(STAMP).pushed: $(STAMP)
+	docker buildx build --push --pull \
 	  --platform $(PLATFORM) \
 	  --build-arg "RELEASE_TAG=$(RELEASE_TAG)" \
-	  -t $(DOCKER_USERNAME)/$(IMAGE_NAME):$(RELEASE_TAG) \
-	  -f $(DOCKERFILE) \
-	  --push .
+	  -t $(IMAGE) \
+	  -f $(DOCKERFILE) .
+	touch $@
 
 # ----------------------------------------------------------------------
 # Convenience targets
@@ -43,6 +54,6 @@ tag-latest:
 	           $(DOCKER_USERNAME)/$(IMAGE_NAME):latest
 
 clean:
-	@echo "Nothing to clean (no local artifacts)."
+	rm -f $(STAMP)
 
 .PHONY: build buildx tag-latest clean
