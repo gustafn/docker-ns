@@ -4,6 +4,10 @@ This directory contains the **OpenACS runtime image** based on NaviServer.
 It is designed to be used both standalone and as part of larger stacks
 (e.g. via Docker Compose or Portainer).
 
+[![Docker Pulls](https://img.shields.io/docker/pulls/gustafn/openacs.svg)](https://hub.docker.com/r/gustafn/openacs)
+[![Image Size](https://img.shields.io/docker/image-size/gustafn/openacs/latest)](https://hub.docker.com/r/gustafn/openacs)
+[![License: MPL-2.0](https://img.shields.io/badge/License-MPL--2.0-blue.svg)](https://mozilla.org/MPL/2.0/)
+
 The image provides:
 
 - OpenACS application code and installation logic
