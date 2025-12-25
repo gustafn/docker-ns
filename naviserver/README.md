@@ -165,6 +165,8 @@ The configuration model follows a simple principle:
 > **The container provides a stable internal layout.
 > The host provides site-specific resources via environment variables and mounts.**
 
+The `nsd_*` variables refer to the variables in the default configuration file [nsd-config.tcl](https://github.com/naviserver-project/naviserver/blob/main/nsd-config.tcl) (see top section) in the NaviServer GitHub repository.
+
 All commonly used configuration knobs are exposed via environment variables,
 without the need to edit the Compose file.
 
@@ -202,7 +204,7 @@ higher-level containers that provide entrypoint/setup scripts, notably:
 * `openacs`
 * `munin-master`
 
-This keeps the base image simple and predictable.
+This keeps the base image lean and simple.
 
 ---
 
