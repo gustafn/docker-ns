@@ -10,13 +10,7 @@ This directory contains the **NaviServer + PostgreSQL client Docker image**.
 The image is a **thin extension of the base `gustafn/naviserver` image** and adds
 support for PostgreSQL access via the NaviServer module `nsdbpg`.
 
-Published as:
-
-```
-
-gustafn/naviserver-pg
-
-```
+Published as [gustafn/naviserver-pg](https://hub.docker.com/repository/docker/gustafn/naviserver-pg/)
 
 ---
 
