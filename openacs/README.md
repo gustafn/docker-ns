@@ -20,12 +20,8 @@ The image provides:
 
 ## Image overview
 
-Published as:
+Published as [gustafn/openacs](https://hub.docker.com/repository/docker/gustafn/openacs/)
 
-```
-gustafn/openacs
-
-```
 
 ### Supported tags
 
