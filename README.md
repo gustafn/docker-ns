@@ -39,7 +39,7 @@ The repository is structured to support:
 
 ## Docker images and tags
 
-Images are published under the `gustafn/*` namespace on Docker Hub.
+Ready to use images are published under the `gustafn/*` namespace on Docker Hub ([https://hub.docker.com/repositories/gustafn](https://hub.docker.com/repositories/gustafn))
 
 ### Tagging policy
 
