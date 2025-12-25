@@ -768,11 +768,11 @@ if {[info exists httpsport] && $httpsport ne ""} {
         foreach address $ipaddress {
             ns_param $server $address
         }
-        if {[dict exists $::docker::containerMapping $httpport/tcp]} {
+        if {[dict exists $::docker::containerMapping $httpsport/tcp]} {
             foreach {label info} $::docker::containerMapping {
-                if {$label ne "$httpport/tcp"} continue
+                if {$label ne "$httpsport/tcp"} continue
                 set __host [dict get $info host]
-                set __port [dict get  $info port]
+                set __port [dict get $info port]
                 puts "added white-listed address '${__host}:${__port}' for server $server on HTTP driver"
                 ns_param $server ${__host}:${__port}
             }
