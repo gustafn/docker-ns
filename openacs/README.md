@@ -15,6 +15,8 @@ The image provides:
 - Database initialization and upgrade support
 - Flexible configuration via environment variables
 - Support for multiple base distributions and NaviServer versions
+  
+The image is based on [`naviserver-pg`](../naviserver-pg/README.md) and contains the Tcl packages and NaviServer modules as provided by this container.
 
 ---
 
