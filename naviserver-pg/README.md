@@ -51,7 +51,7 @@ naviserver
 
 ## What this image adds
 
-Compared to `gustafn/naviserver`, this image includes:
+Compared to [`gustafn/naviserver`](../naviserver/README.md), this image includes:
 
 - PostgreSQL client libraries
 - NaviServer database driver:
