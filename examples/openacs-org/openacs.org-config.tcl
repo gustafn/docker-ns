@@ -630,7 +630,7 @@ if {[info exists httpport] && $httpport ne ""} {
                 if {$label ne "$httpport/tcp"} continue
                 set __host [dict get $info host]
                 set __port [dict get  $info port]
-                puts "added white-listed address '${__host}:${__port}' for server $server on HTTP driver"
+                ns_log notice "added white-listed address '${__host}:${__port}' for server $server on HTTP driver"
                 ns_param $server ${__host}:${__port}
             }
         }
@@ -773,7 +773,7 @@ if {[info exists httpsport] && $httpsport ne ""} {
                 if {$label ne "$httpsport/tcp"} continue
                 set __host [dict get $info host]
                 set __port [dict get $info port]
-                puts "added white-listed address '${__host}:${__port}' for server $server on HTTP driver"
+                ns_log notice "added white-listed address '${__host}:${__port}' for server $server on HTTP driver"
                 ns_param $server ${__host}:${__port}
             }
         }
