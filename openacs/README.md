@@ -18,6 +18,10 @@ The image provides:
   
 The image is based on [`gustafn/naviserver-pg`](../naviserver-pg/README.md) and contains the Tcl packages and NaviServer modules as provided by this container.
 
+Source repositories:
+- [NaviServer](https://github.com/naviserver-project)
+- [OpenACS](https://github.com/openacs)
+
 ---
 
 ## Image overview
