@@ -38,6 +38,14 @@ Remove persistent data (named volumes):
 docker compose down -v
 ```
 
+Connect to the Database to Run SQL Commands
+
+When installing the system with `oacs-5-10` as database name (default) and openacs as database user (default) then
+
+- Open a shell to the postgres container (or use docker run ... or docker exec ...)
+- `psql --username openacs --dbname oacs-5-10`
+
+
 ---
 
 ## What this stack creates
