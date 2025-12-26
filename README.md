@@ -11,6 +11,11 @@ The repository is structured to support:
 - local development builds and multi-arch `buildx` pushes
 - reproducible example stacks using Docker Compose or Portainer
 
+
+Source repositories:
+- [NaviServer](https://github.com/naviserver-project)
+- [OpenACS](https://github.com/openacs)
+
 ---
 
 ## Repository structure
