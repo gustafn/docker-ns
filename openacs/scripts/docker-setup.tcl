@@ -51,13 +51,15 @@ if {[dict exists $jsonDict NetworkSettings]} {
             continue
         }
         puts stdout "docker-setup.tcl: processing docker network label '$label'"
-        set networkMappings [lindex $networkMappings 0]
-        try {
-            set host [dict get $networkMappings HostIp]
-            set port [dict get $networkMappings HostPort]
-            dict set containerMapping $label [list proto $proto host $host port $port]
-        } on error {errorMsg} {
-            puts stdout "docker-setup.tcl: error: processing docker network leads to error: $errorMsg\n<<<$networkMappings>>>"
+
+        foreach mapping $networkMappings {
+            try {
+                set host [dict get $mapping HostIp]
+                set port [dict get $mapping HostPort]
+                lappend containerMapping $label [list proto $proto host $host port $port]
+            } on error {errorMsg} {
+                puts stdout "docker-setup.tcl: error: processing docker network leads to error: $errorMsg\n<<<$mapping>>>"
+            }
         }
     }
 }
@@ -65,7 +67,7 @@ if {[dict exists $jsonDict NetworkSettings]} {
 set F [open /scripts/docker-dict.tcl w]
 puts $F [list namespace eval ::docker {}]
 puts $F [list set ::docker::jsonDict $jsonDict]
-if {[info exists containerMapping]} {    
+if {[info exists containerMapping]} {
     puts $F [list set ::docker::containerMapping $containerMapping]
 }
 close $F
