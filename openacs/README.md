@@ -98,27 +98,6 @@ The following environment variables are recognized by the OpenACS container.
 
 ---
 
-### TLS / certificates
-
-| Variable | Default | Description |
-|--------|--------|-------------|
-| `oacs_certificate` | `/usr/local/ns/etc/server.pem` | TLS certificate path |
-
-The certificate file is expected to be present inside the container, typically
-via a bind mount or generated during setup.
-
----
-
-### Logging
-
-| Variable | Default | Description |
-|--------|--------|-------------|
-| `oacs_logroot` | `/var/www/openacs/log` | Log directory |
-
-Ensure this path is writable and persistent if logs should survive restarts.
-
----
-
 ### Database connection
 
 | Variable | Default | Description |
@@ -154,6 +133,89 @@ Example:
 ```sh
 system_pkgs="imagemagick poppler-utils"
 ```
+
+---
+
+## TLS Certificates & `certificatesdir`
+
+The OpenACS container includes support for HTTPS/TLS by managing a certificate file that NaviServer will use for SSL termination (e.g., on `oacs_httpsport`). You can control this behavior using the following environment variables and volume mappings.
+
+### Default Behavior
+
+By default, if no certificate is provided, the entrypoint will generate a **self-signed certificate** for the hostname (`oacs_hostname`) and store it under the default certificates directory:
+
+```
+/var/www/openacs/certificates/${oacs_hostname}.pem
+```
+
+This directory is exposed as a persistent volume so the certificate will survive container restarts:
+
+```yaml
+services:
+  openacs:
+    volumes:
+      - ${certificatesdir:-oacs_certificates}:/var/www/${service:-openacs}/certificates
+```
+
+This default (`oacs_certificates`) is a named volume that persists the generated self-signed certificate and supports automated renewal workflows (e.g., via Let’s Encrypt tooling that might be integrated later).
+
+### Providing Your Own Certificate
+
+If you have an existing certificate (combined key+cert in one PEM file), you can specify it via the `oacs_certificate` environment variable:
+
+```yaml
+services:
+  openacs:
+    environment:
+      oacs_certificate: "/run/secrets/my_cert.pem"
+```
+
+* When **no `certificatesdir` is set** (internal mode), the entrypoint will **copy the provided certificate into the default certdir** (overwriting or seeding) before starting NaviServer. This ensures the certificate is placed in the same writable volume that renewal tooling expects.
+
+### External Certificate Management (`certificatesdir`)
+
+When you explicitly provide a `certificatesdir` environment variable (or bind a host directory to it), this signals that the certificates are **managed externally** (outside the container) and should not be copied or generated automatically.
+
+Example compose snippet:
+
+```yaml
+services:
+  openacs:
+    environment:
+      certificatesdir: "/run/secrets/openacs_certs"
+      oacs_hostname: "example.com"
+      oacs_certificate: "/run/secrets/example.com.pem"
+    volumes:
+      - /path/on/host/certs:/run/secrets/openacs_certs
+```
+
+In this mode:
+
+* No certificate copying is performed.
+* The container expects the certificate to already exist and be readable at the path you specify.
+* Automated generation of self-signed certificates *is disabled* by default (you can opt in via `ns_allow_self_signed=1` if needed).
+* This mode is useful when certificates are managed externally (e.g., corporate PKI, Let’s Encrypt on the host, or a secrets manager).
+
+If the certificate is missing or unreadable in external mode (and self-signed generation is not permitted), the startup will fail to prevent unclear HTTPS behavior.
+
+### Summary of Variables
+
+| Variable                          | Purpose                                                             |
+| --------------------------------- | ------------------------------------------------------------------- |
+| `oacs_hostname`                   | Hostname used for certificate CN/SAN and default PEM filename.      |
+| `oacs_certificate`                | Optional explicit full path to a certificate PEM (key+cert).        |
+| `certificatesdir`                 | If set and non-empty, enables external certificate management mode. |
+| `oacs_certificates` (volume name) | Default named volume for storing generated or copied certificates.  |
+
+---
+
+### Logging
+
+| Variable | Default | Description |
+|--------|--------|-------------|
+| `oacs_logroot` | `/var/www/openacs/log` | Log directory |
+
+Ensure this path is writable and persistent if logs should survive restarts.
 
 ---
 
