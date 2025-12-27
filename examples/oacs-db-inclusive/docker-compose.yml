@@ -90,7 +90,7 @@ services:
       oacs_server: ${service:-oacs-5-10}
       oacs_serverroot: /var/www/openacs
       oacs_certificate: ${certificate:-/usr/local/ns/etc/server.pem}
-      oacs_logroot: ${logroot:-/var/www/openacs/log}
+      oacs_logdir: ${logdir:-${oacs_root}/log}
       oacs_tag: ${oacs_tag:-oacs-5-10}
       oacs_clusterSecret: ${clusterSecret:-}
       oacs_parameterSecret: ${parameterSecret:-}
@@ -112,7 +112,8 @@ services:
       #- db_data:/var/lib/postgresql/data          # for pg 10-17
       - db_data:/var/lib/postgresql/data/18/docker # for pg18+
       - ${secretsdir:-oacs_secrets}:/run/secrets
-
+      - ${certificatesdir:-oacs_certificates}:/var/www/${service:-openacs}/certificates
+      
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${db_user:-openacs} --dbname ${service:-oacs-5-10}"]
       interval: 10s
@@ -123,4 +124,5 @@ volumes:
   db_data:
   oacs_data:
   oacs_secrets:
+  oacs_certificates:
 
