@@ -144,9 +144,10 @@ services:
       # These have the same effect as dict set defaultConfig ... but are
       # easier to tweak via Portainer.
       oacs_server: ${hostname}
+      oacs_hostname: ${hostname:-localhost}
       oacs_serverprettyname: OpenACS Web Site
       oacs_serverroot: ${oacs_root}
-      oacs_logdir: ${logdir}
+      oacs_logdir: ${logdir:-${oacs_root}/log}
       oacs_certificate: ${certificate:-${oacs_root}/etc/certfile.pem}
 
       # Internal container IP and ports, to be mapped to host values
