@@ -172,6 +172,7 @@ services:
       # Existing OpenACS tree (code, content-repository, etc.)
       - ${oacs_root}:${oacs_root}
       - ${oacs_root}/www/munin-container:${oacs_root}/www/munin
+      - ${certificatesdir:-oacs_certificates}:${oacs_root}/certificates
 
       - /var/run/docker.sock:/var/run/docker.sock
       
@@ -299,6 +300,9 @@ secrets:
   parameter_secret:
     file: ${oacs_root}/etc/secrets/parameter_secret.txt
     
+volumes:
+  oacs_certificates:
+
 networks:
   oacs-net:
     name: oacs-net
