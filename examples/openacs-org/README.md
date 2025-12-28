@@ -57,7 +57,7 @@ This allows:
 The complete OpenACS installation is mounted from the host:
 
 ```text
-${oacs_root}
+${oacs_serverroot}
 ```
 
 This enables:
@@ -125,7 +125,7 @@ is a **template / example**, not a production snapshot.
 TLS certificates are stored **outside the container**, at a site-specific path:
 
 ```text
-${oacs_root}/etc/
+${oacs_serverroot}/etc/
 ```
 
 The same certificate is reused by:
@@ -211,11 +211,11 @@ They are typically set via:
 
 ### Required variables
 
-| Variable    | Description                                  |
-| ----------- | -------------------------------------------- |
-| `hostname`  | DNS name of the site (e.g. `openacs.org`)    |
-| `oacs_root` | Path to the OpenACS installation on the host |
-| `logdir`    | Directory for logs and runtime state         |
+| Variable          | Description                                  |
+| ----------------- | -------------------------------------------- |
+| `hostname`        | DNS name of the site (e.g. `openacs.org`)    |
+| `oacs_serverroot` | Path to the OpenACS installation on the host |
+| `logdir`          | Directory for logs and runtime state         |
 
 ---
 
@@ -245,9 +245,9 @@ This allows replacing the config file without rebuilding the image.
 
 #### TLS / certificates
 
-| Variable      | Default                         | Purpose                   |
-| ------------- | ------------------------------- | ------------------------- |
-| `certificate` | `${oacs_root}/etc/certfile.pem` | TLS cert for HTTPS + SMTP |
+| Variable      | Default                               | Purpose                   |
+| ------------- | ------------------------------------- | ------------------------- |
+| `certificate` | `${oacs_serverroot}/etc/certfile.pem` | TLS cert for HTTPS + SMTP |
 
 ---
 
@@ -279,9 +279,9 @@ Secrets are **not stored in this repository**.
 Expected files:
 
 ```text
-${oacs_root}/etc/secrets/psql_password.txt
-${oacs_root}/etc/secrets/cluster_secret.txt
-${oacs_root}/etc/secrets/parameter_secret.txt
+${oacs_serverroot}/etc/secrets/psql_password.txt
+${oacs_serverroot}/etc/secrets/cluster_secret.txt
+${oacs_serverroot}/etc/secrets/parameter_secret.txt
 ```
 
 They are mounted via Docker secrets and read by startup scripts.
