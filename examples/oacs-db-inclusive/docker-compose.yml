@@ -88,9 +88,9 @@ services:
       oacs_loopbackport: ${internal_loopbackport:-8888}
       oacs_hostname: ${hostname:-localhost}
       oacs_server: ${service:-oacs-5-10}
-      oacs_serverroot: /var/www/openacs
+      oacs_serverroot: ${oacs_serverroot:-/var/www/openacs}
       oacs_certificate: ${certificate:-/usr/local/ns/etc/server.pem}
-      oacs_logdir: ${logdir:-${oacs_root}/log}
+      oacs_logdir: ${logdir:-${oacs_serverroot:-/var/www/openacs}/log}
       oacs_tag: ${oacs_tag:-oacs-5-10}
       oacs_clusterSecret: ${clusterSecret:-}
       oacs_parameterSecret: ${parameterSecret:-}
