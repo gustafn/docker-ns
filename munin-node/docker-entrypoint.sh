@@ -53,12 +53,12 @@ echo " "
 # ----------------------------------------------------------------------
 install_munin_tcl() {
   # Where the Dockerfile put it:
-  local src="/usr/local/share/munin-plugins-ns/munin.tcl"
+  src="/usr/local/share/munin-plugins-ns/munin.tcl"
 
-  # Where OpenACS expects it (adjust if your mount uses a different base):
+  # Where OpenACS expects it:
   # Example: /oacs-system is a bind mount of ${oacs_root}
-  local dst_dir="${OACS_SYSTEM_DIR:-/oacs-system}"
-  local dst="${dst_dir}/munin.tcl"
+  dst_dir="${OACS_SYSTEM_DIR:-/oacs-system}"
+  dst="${dst_dir}/munin.tcl"
 
   # Sanity checks
   if [ ! -r "$src" ]; then
@@ -71,8 +71,8 @@ install_munin_tcl() {
   fi
 
   # Determine ownership of the target directory (numeric uid/gid)
-  # stat -c works on busybox and GNU; if yours is different, tell me.
-  local uid gid
+  # Avoid bashisms
+  #local uid gid
   uid="$(stat -c '%u' "$dst_dir")" || return 0
   gid="$(stat -c '%g' "$dst_dir")" || return 0
 
@@ -173,16 +173,19 @@ echo "munin-node: connectivity checks..."
 
 # Helper: test host:port with nc
 check_tcp() {
-  host="$1"; port="$2"; label="$3"
-  for i in 1 2 3 4 5; do
-    if nc -z -w 2 "$host" "$port" >/dev/null 2>&1; then
-      echo "  [OK]  $label $host:$port"
-      return 0
-    fi
-    sleep 2
-  done
-  echo "  [WARN] Cannot reach $host:$port (after retries)"
-  return 1
+    host="$1"; port="$2"; label="$3"
+
+    retries=5
+    while [ "$retries" -gt 0 ]; do
+        if nc -z -w 2 "$host" "$port" >/dev/null 2>&1; then
+            echo "  [OK]  $label $host:$port"
+            return 0
+        fi
+        retries=$((retries - 1))
+        sleep 2
+    done
+    echo "  [WARN] Cannot reach $host:$port (after retries)"
+    return 1
 }
 
 # Helper: simple DNS/ICMP check

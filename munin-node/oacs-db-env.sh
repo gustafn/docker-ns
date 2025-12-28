@@ -56,3 +56,6 @@ case "$DB_HOST" in
     fi
     ;;
 esac
+# silence shell check
+: "${DB_EFFECTIVE_HOST:?}"
+: "${DB_EFFECTIVE_DESC:?}"

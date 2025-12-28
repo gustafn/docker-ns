@@ -6,7 +6,7 @@
 
 FROM debian:bookworm-slim
 
-RUN apt-get update  && DEBIAN_FRONTEND=noninteractive apt-get install -y locales  && sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen  && dpkg-reconfigure --frontend=noninteractive locales  && update-locale LANG=en_US.UTF-8
+RUN DEBIAN_FRONTEND=noninteractive apt-get -qq update  && DEBIAN_FRONTEND=noninteractive apt-get install -y locales  && sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen  && dpkg-reconfigure --frontend=noninteractive locales  && update-locale LANG=en_US.UTF-8
     
 ENV LC_ALL=en_US.UTF-8
 
@@ -32,7 +32,7 @@ RUN addgroup --system nsadmin \
     && adduser --disabled-password --no-create-home --ingroup nsadmin --gecos "NaviServer Admin" nsadmin \
     && mkdir -p /scripts
 
-RUN  apt update  && apt upgrade -y && DEBIAN_FRONTEND=noninteractive apt-get -qq install -y --no-install-recommends bash tzdata locales ca-certificates libtcmalloc-minimal4 $system_pkgs  && dev_packages="git patch curl libpam0g-dev"  && DEBIAN_FRONTEND=noninteractive apt-get -qq install -y --no-install-recommends $dev_packages \
+RUN  DEBIAN_FRONTEND=noninteractive apt-get -qq update  && DEBIAN_FRONTEND=noninteractive apt-get -qq upgrade -y  && DEBIAN_FRONTEND=noninteractive apt-get -qq install -y --no-install-recommends bash tzdata locales ca-certificates libtcmalloc-minimal4 $system_pkgs  && dev_packages="git patch curl libpam0g-dev"  && DEBIAN_FRONTEND=noninteractive apt-get -qq install -y --no-install-recommends $dev_packages \
     && git clone https://github.com/gustafn/install-ns.git \
     && cd install-ns \
     && with_postgres=0 \

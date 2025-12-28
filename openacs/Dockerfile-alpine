@@ -35,6 +35,7 @@ COPY --chmod=755 \
    scripts/ensure-secrets.sh \
    scripts/oacs-db-env.sh \
    scripts/wait-for-postgres.sh \
+   scripts/ns-certificates.sh \
    /scripts/
 COPY scripts/docker-setup.tcl /scripts/
    

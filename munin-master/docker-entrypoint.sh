@@ -27,7 +27,7 @@ if [ ! -f /etc/munin/munin.conf ]; then
     echo "Generated /etc/munin/munin.conf"
     echo "---"
     sed 's/^/    /' /etc/munin/munin.conf
-    echo "---"    
+    echo "---"
 fi
 
 # --- Map munin UID/GID to host user specified by MUNIN_HOST_USER (e.g. nsadmin) ---

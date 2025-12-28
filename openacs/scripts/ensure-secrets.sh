@@ -43,40 +43,48 @@
 
 set -e
 
+# HOSTNAME is expected to be set by the container runtime.
+# shellcheck disable=SC3028
+: "${HOSTNAME:?}"
+
 dir="/run/secrets"
 mkdir -p "$dir"
 chgrp nsadmin "$dir" 2>/dev/null || true
 chmod 750 "$dir"
 
 new_secret() {
-  local name="$1"
-  local desc="$2"
-  local default="$3"
+  name=$1
+  desc=$2
+  default=$3
 
-  local path="${dir}/${name}"
+  path="${dir}/${name}"
 
   if [ -f "$path" ]; then
     echo "ensure-secrets: keeping existing ${name}"
-    return
+    return 0
   fi
 
   if [ -z "$default" ]; then
-      echo "ensure-secrets: generating ${name} (${desc})"
-      openssl rand -base64 32 > "$path"
+    echo "ensure-secrets: generating ${name} (${desc})"
+    openssl rand -base64 32 >"$path" || return 1
   else
     echo "ensure-secrets: using default for ${name} (${desc})"
-    printf '%s\n' "$default" > "$path"
+    printf '%s\n' "$default" >"$path" || return 1
     if [ "$name" = "psql_password" ] && [ "$default" = "openacs" ]; then
-        echo "ensure-secrets: psql_password default is: $default"
+      echo "ensure-secrets: psql_password default is: $default"
     fi
   fi
-  chgrp nsadmin "$path" 2>/dev/null || true
-  chmod 640 "$path"
+
+  chgrp nsadmin "$path" 2>/dev/null || :
+  chmod 640 "$path" || return 1
 }
 
 new_secret "psql_password"    "PostgreSQL / OpenACS DB password" "${oacs_db_password:-openacs}"
 new_secret "cluster_secret"   "OpenACS cluster secret"           "${oacs_clusterSecret:-}"
 new_secret "parameter_secret" "OpenACS parameter secret"         "${oacs_parameterSecret:-}"
 
-export oacs_parameterSecret="$(cat "${dir}/parameter_secret")"
-export oacs_clusterSecret="$(cat "${dir}/cluster_secret")"
+oacs_parameterSecret=$(cat "${dir}/parameter_secret") || exit 1
+export oacs_parameterSecret
+
+oacs_clusterSecret=$(cat "${dir}/cluster_secret") || exit 1
+export oacs_clusterSecret

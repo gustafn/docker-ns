@@ -12,6 +12,10 @@
 #     /proc/self/mountinfo as /docker/containers/<64hex>/...
 #
 
+# HOSTNAME is expected to be set by the container runtime.
+# shellcheck disable=SC3028
+: "${HOSTNAME:?}"
+
 set -e
 
 CONFIG_PATH="/scripts/docker.config"

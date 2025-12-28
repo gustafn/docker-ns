@@ -3,10 +3,20 @@
 
 echo "-- container-setup-openacs.sh called --"
 
+: "${base_image:?}"
+
+: "${oacs_serverroot:?}"
+: "${oacs_hostname:?}"
+: "${oacs_db_host:?}"
+: "${oacs_db_name:?}"
+: "${oacs_db_user:?}"
+: "${oacs_tag:-oacs-5-10}"
+
+: "${install_dotlrn:-0}"
+
 #
-# We require bash to be able to execute the "source" command.
 # Get setup info from compilation steps:
-source /usr/local/ns/lib/nsConfig.sh
+. /usr/local/ns/lib/nsConfig.sh
 
 # Obtain Docker info (if possible) and write it to /scripts/docker.config
 if [ -x /scripts/get-docker-config.sh ]; then
@@ -30,18 +40,39 @@ if [ -x /scripts/wait-for-postgres.sh ]; then
     /scripts/wait-for-postgres.sh
 fi
 
+# shellcheck disable=SC1091
+. /scripts/ns-certificates.sh
+
+oacs_certificate=$(
+  ns_setup_certificates "$oacs_serverroot" "$oacs_hostname" "${oacs_certificate-}"
+) || return 1
+
+export oacs_certificate
+
 CONTAINER_ALREADY_STARTED="/CONTAINER_ALREADY_STARTED_PLACEHOLDER"
 if [ ! -e $CONTAINER_ALREADY_STARTED ] ; then
     touch $CONTAINER_ALREADY_STARTED
     echo "-- First container startup --"
 
+    # shellcheck disable=SC2086
     if [ $alpine = "1" ] ; then
-        apk add --no-cache shadow shadow-uidmap $system_pkgs
+        apk add --no-cache shadow shadow-uidmap ${system_pkgs:-}
         # apk add lldb
     elif [ $debian = "1" ] ; then
-        DEBIAN_FRONTEND=noninteractive apt install -y $system_pkgs
+        echo "... installing system_pkgs ' $system_pkgs' ..."
+        if DEBIAN_FRONTEND=noninteractive DEBCONF_TERSE=true \
+                          apt-get -y -qq install $system_pkgs \
+                          -o Dpkg::Use-Pty=0 \
+                          -o DPkg::Progress-Fancy=0 \
+                          > /dev/null
+        then
+            echo "... installed system_pkgs ' $system_pkgs' DONE"
+        else
+            echo "ERROR: installing system_pkgs failed" >&2
+            exit 1
+        fi
     fi
-    
+
     #
     # Map UID/GID of HOST_USER and HOST_GROUP to the container nsadmin user/group.
     # Always requires a bind-mount of /host-etc/passwd, and a bind-mount of
@@ -98,9 +129,9 @@ if [ ! -e $CONTAINER_ALREADY_STARTED ] ; then
             fi
         fi
     fi
-    
-    echo "Content of oacs_serverroot: ${oacs_serverroot}" 
-    ls -l ${oacs_serverroot}
+
+    echo "Content of oacs_serverroot: ${oacs_serverroot}"
+    ls -l "${oacs_serverroot}"
 
     LOGDIR="${oacs_logdir:-${oacs_serverroot}/log}"
     mkdir -p "$LOGDIR"
@@ -108,58 +139,59 @@ if [ ! -e $CONTAINER_ALREADY_STARTED ] ; then
     chmod 2775 "$LOGDIR"
     echo "LOGDIR ${LOGDIR}"
     ls -ld "${LOGDIR}"
-    
+
     #mkdir -p ${oacs_serverroot}/log
     #mkdir -p ${oacs_serverroot}/www/SYSTEM
 
-    if [ ! -f ${oacs_serverroot}/install.xml ] ; then
+    if [ ! -f "${oacs_serverroot}/install.xml" ] ; then
         echo "Using Install file: ${install_file:-openacs-xowf-install.xml}"
-        cp ${oacs_serverroot}/${install_file:-openacs-xowf-install.xml} ${oacs_serverroot}/install.xml
+        cp "${oacs_serverroot}/${install_file:-openacs-xowf-install.xml}" "${oacs_serverroot}/install.xml"
     fi
-    
-    oacs_core_tag=$oacs_tag
-    oacs_packages_tag=$oacs_tag
+
+    oacs_core_tag="$oacs_tag"
+    oacs_packages_tag="$oacs_tag"
 
     #
     # We have here always a serverroot, but maybe no checked out
     # version of the source code (which might be mounted via
     # "volumes".
     #
-    cd  ${oacs_serverroot}
+    cd  "${oacs_serverroot}" || exit 1
     if [ ! -d "packages" ] ; then
         echo "====== we have no OpenACS packages, install from CVS"
-        ls ${oacs_serverroot}
+        ls "${oacs_serverroot}"
         #echo "================================= exit"
         #exit
 
         if [ $alpine = "1" ] ; then
             apk add cvs
         elif [ $debian = "1" ] ; then
-            DEBIAN_FRONTEND=noninteractive apt install -y cvs
+            DEBIAN_FRONTEND=noninteractive apt-get -qq install -y cvs
         fi
 
-        cvs -d:pserver:anonymous@cvs.openacs.org:/cvsroot -Q checkout -r ${oacs_core_tag} acs-core
+        cvs -d:pserver:anonymous@cvs.openacs.org:/cvsroot -Q checkout -r "${oacs_core_tag}" acs-core
         if [ ! -d "packages" ] ; then
             #
             # This is for CVS vs. tar checkouts: Move files from openacs-4/* one level up.
             #
+            # shellcheck disable=SC2046
             mv $(echo openacs-4/[a-z]*) .
         fi
 
         #
         # Get content from the installer packages to the install location
         #
-        cp ${oacs_serverroot}/packages/acs-bootstrap-installer/installer/www/*.* ${oacs_serverroot}/www/
-        cp ${oacs_serverroot}/packages/acs-bootstrap-installer/installer/www/SYSTEM/*.* ${oacs_serverroot}/www/SYSTEM
-        cp ${oacs_serverroot}/packages/acs-bootstrap-installer/installer/tcl/*.* ${oacs_serverroot}/tcl/
+        cp "${oacs_serverroot}"/packages/acs-bootstrap-installer/installer/www/*.* "${oacs_serverroot}/www/"
+        cp "${oacs_serverroot}"/packages/acs-bootstrap-installer/installer/www/SYSTEM/*.* "${oacs_serverroot}/www/SYSTEM"
+        cp "${oacs_serverroot}"/packages/acs-bootstrap-installer/installer/tcl/*.* "${oacs_serverroot}/tcl/"
 
         #
         # Get more packages
         #
         echo "====== Check out application packages from CVS...."
-        cd ${oacs_serverroot}/packages
-        cvs -d:pserver:anonymous@cvs.openacs.org:/cvsroot -Q checkout -r ${oacs_packages_tag} xotcl-all
-        cvs -d:pserver:anonymous@cvs.openacs.org:/cvsroot -Q checkout -r ${oacs_packages_tag} \
+        cd "${oacs_serverroot}/packages" || exit 1
+        cvs -d:pserver:anonymous@cvs.openacs.org:/cvsroot -Q checkout -r "${oacs_packages_tag}" xotcl-all
+        cvs -d:pserver:anonymous@cvs.openacs.org:/cvsroot -Q checkout -r "${oacs_packages_tag}" \
             acs-developer-support \
             attachments \
             richtext-ckeditor4 \
@@ -170,61 +202,27 @@ if [ ! -e $CONTAINER_ALREADY_STARTED ] ; then
         #rm /var/www/openacs/install.xml
 
         if [ "${install_dotlrn}" = "1" ] ; then
-            cvs -d:pserver:anonymous@cvs.openacs.org:/cvsroot -Q checkout -r ${oacs_packages_tag} dotlrn-all
+            cvs -d:pserver:anonymous@cvs.openacs.org:/cvsroot -Q checkout -r "${oacs_packages_tag}" dotlrn-all
         fi
         echo "====== Check out of from CVS done."
-        ls -l ${oacs_serverroot}/packages
+        ls -l "${oacs_serverroot}/packages"
 
         #
         # Set permissions on server sources and log files
         #
-        chown -R nsadmin:nsadmin ${oacs_serverroot}
-        chmod -R g+w ${oacs_serverroot}
+        chown -R nsadmin:nsadmin "${oacs_serverroot}"
+        chmod -R g+w "${oacs_serverroot}"
 
         #
         # Make nsstats available under "/admin/nsstats" on every subsite.
         #
-        if [ ! -e  ${oacs_serverroot}/packages/acs-subsite/www/admin/nsstats.tcl ] ; then
-            cp /usr/local/ns/pages/nsstats.* ${oacs_serverroot}/packages/acs-subsite/www/admin
+        if [ ! -e  "${oacs_serverroot}"/packages/acs-subsite/www/admin/nsstats.tcl ] ; then
+            cp /usr/local/ns/pages/nsstats.* "${oacs_serverroot}"/packages/acs-subsite/www/admin
         fi
     else
         echo "====== Packages are already installed, use existing (external?) installation"
     fi
 
-    #
-    # If no certificate is found, create a self-signed certificate.
-    #
-    echo "Setting up certificate if not exists: '${oacs_certificate}'"
-    
-    # Determine cert path and hostname
-    : "${OACS_HOSTNAME:=${hostname:-localhost}}"
-    : "${oacs_certificate:=${oacs_certificate:-${oacs_root:-/var/www/openacs}/etc/${OACS_HOSTNAME}.pem}}"
-    
-    if [ ! -s ${oacs_certificate} ] ; then
-        echo "No TLS certificate found at '$oacs_certificate', generating self-signed certificate..."
-
-        mkdir -p "$(dirname "$oacs_certificate")"
-
-        tmpkey="$(mktemp)"
-        tmpcrt="$(mktemp)"
-
-        # Generate key + self-signed cert
-        openssl req -x509 -nodes -newkey rsa:4096 \
-                -keyout "$tmpkey" \
-                -out "$tmpcrt" \
-                -days 365 \
-                -subj "/CN=${OACS_HOSTNAME}" \
-                -addext "subjectAltName=DNS:${OACS_HOSTNAME}"
-
-        # Combine key + cert into a single PEM file (what NaviServer uses)
-        cat "$tmpkey" "$tmpcrt" > "$oacs_certificate"
-        chown nsadmin:nsadmin ${oacs_certificate}
-        chmod 600 ${oacs_certificate}
-        rm -f "$tmpkey" "$tmpcrt"
-
-        echo "Self-signed certificate created at $oacs_certificate"
-    fi
-  
     #
     # Now we have to check, whether we have to create the database
     #
@@ -232,14 +230,18 @@ if [ ! -e $CONTAINER_ALREADY_STARTED ] ; then
     if [ -e /usr/local/ns/bin/nsdbpg.so ] ; then
         echo "====== we have nsdbpg.so"
     fi
-    if [[ "$base_image" = *"naviserver-pg"* ]] ; then
-        echo "====== Use PostgreSQL"
-        db_admin_user=${db_admin_user:-postgres}
-        db_dir=/usr
-    else
-        echo "====== Use Oracle (so far, not configured)"
-        db_admin_user=${db_admin_user:-system}
-    fi
+
+    case $base_image in
+        *naviserver-pg*)
+            echo "====== Use PostgreSQL"
+            db_admin_user=${db_admin_user:-postgres}
+            db_dir=/usr
+            ;;
+        *)
+            echo "====== Use Oracle (so far, not configured)"
+            db_admin_user=${db_admin_user:-system}
+            ;;
+    esac
 
     if [ "$oacs_db_host" = "host.docker.internal" ] ; then
         echo "====== Use the Database on the docker host"
@@ -253,7 +255,7 @@ if [ ! -e $CONTAINER_ALREADY_STARTED ] ; then
         #
         echo "====== Configuration variables":
         env | sort
-        echo "======= DB setup:" db_admin_user=$db_admin_user db_dir=$db_dir oacs_db_name=$oacs_db_name oacs_db_host=$oacs_db_host oacs_db_user=$oacs_db_user
+        echo "======= DB setup: db_admin_user=$db_admin_user db_dir=$db_dir oacs_db_name=$oacs_db_name oacs_db_host=$oacs_db_host oacs_db_user=$oacs_db_user"
 
         #cd /tmp
         #set -o errexit
@@ -279,15 +281,21 @@ else
     echo "-- Not first container startup --"
 fi
 
-for pair in "oacs_clusterSecret cluster_secret" "oacs_parameterSecret parameter_secret"; do
-  set -- $pair
-  var=$1
-  sec=$2
-  file="/run/secrets/$sec"
-  if [[ -r $file ]]; then
-    export "$var=$(<"$file")"
-    echo "SET $var from $file"
-  fi
+for pair in \
+    "oacs_clusterSecret cluster_secret" \
+    "oacs_parameterSecret parameter_secret"
+do
+    # Split into two fields (POSIX)
+    IFS=' ' read -r var sec <<EOF
+$pair
+EOF
+
+    file="/run/secrets/$sec"
+    if [ -r "$file" ]; then
+        val=$(cat "$file")
+        export "$var=$val"
+        echo "SET $var from $file"
+    fi
 done
 
 /usr/local/ns/bin/tclsh /scripts/docker-setup.tcl /scripts/docker.config
@@ -298,7 +306,7 @@ ls -ltr /scripts/
     chown nsadmin:nsadmin "$LOGDIR"
     chmod 2775 "$LOGDIR"
     echo "LOGDIR ${LOGDIR}"
-    ls -ld "${LOGDIR}"    
+    ls -ld "${LOGDIR}"
 
 echo "-- container-setup-openacs.sh finished --"
 
