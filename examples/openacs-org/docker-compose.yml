@@ -32,7 +32,7 @@
 #     Time zone inside containers
 #
 # Paths (host paths, must exist)
-#   oacs_serverroot            (required)
+#   hostroot            (required)
 #     OpenACS installation root on the host
 #
 #   logdir               (required)
@@ -43,7 +43,7 @@
 #     Path to site-specific NaviServer configuration file
 #
 #   certificate
-#     Default: ${oacs_serverroot}/etc/certfile.pem
+#     Default: ${hostroot}/etc/certfile.pem
 #     TLS certificate file used by NaviServer and Postfix
 #
 # Networking
@@ -85,9 +85,9 @@
 #     Extra system packages required by the application
 #
 # Secrets (files, host paths)
-#   ${oacs_serverroot}/etc/secrets/psql_password.txt
-#   ${oacs_serverroot}/etc/secrets/cluster_secret.txt
-#   ${oacs_serverroot}/etc/secrets/parameter_secret.txt
+#   ${hostroot}/etc/secrets/psql_password.txt
+#   ${hostroot}/etc/secrets/cluster_secret.txt
+#   ${hostroot}/etc/secrets/parameter_secret.txt
 #
 # -------------------------------------------------------------------
 
@@ -146,9 +146,9 @@ services:
       oacs_server: ${hostname}
       oacs_hostname: ${hostname:-localhost}
       oacs_serverprettyname: OpenACS Web Site
-      oacs_serverroot: ${oacs_serverroot}
-      oacs_logdir: ${logdir:-${oacs_serverroot}/log}
-      oacs_certificate: ${certificate:-${oacs_serverroot}/etc/certfile.pem}
+      oacs_serverroot: ${hostroot}
+      oacs_logdir: ${logdir:-${hostroot}/log}
+      oacs_certificate: ${certificate:-${hostroot}/etc/certfile.pem}
 
       # Internal container IP and ports, to be mapped to host values
       oacs_httpport: 8080
@@ -170,9 +170,9 @@ services:
 
     volumes:
       # Existing OpenACS tree (code, content-repository, etc.)
-      - ${oacs_serverroot}:${oacs_serverroot}
-      - ${oacs_serverroot}/www/munin-container:${oacs_serverroot}/www/munin
-      - ${certificatesdir:-oacs_certificates}:${oacs_serverroot}/certificates
+      - ${hostroot}:${hostroot}
+      - ${hostroot}/www/munin-container:${hostroot}/www/munin
+      - ${certificatesdir:-oacs_certificates}:${hostroot}/certificates
 
       - /var/run/docker.sock:/var/run/docker.sock
       
@@ -208,14 +208,14 @@ services:
 
     environment:
       <<: *default-env
-      POSTFIX_TLS_CERT_FILE: ${certificate:-${oacs_serverroot}/etc/certfile.pem}
+      POSTFIX_TLS_CERT_FILE: ${certificate:-${hostroot}/etc/certfile.pem}
       #POSTFIX_MYNETWORKS: 127.0.0.0/8 [::1]/128 172.16.0.0/12 172.27.0.0/16
 
     volumes:
       # Share the same tree as OpenACS
-      - ${oacs_serverroot}:${oacs_serverroot}
+      - ${hostroot}:${hostroot}
       # Optionally, override Postfix main.cf with your own config
-      #- ${oacs_serverroot}/etc/postfix-main.cf:/etc/postfix/main.cf:ro
+      #- ${hostroot}/etc/postfix-main.cf:/etc/postfix/main.cf:ro
       - ${logdir}/postfix:/var/log
       
     networks:
@@ -281,9 +281,9 @@ services:
       # Munin logs
       - ${logdir}/munin-master:/var/log/munin
       # HTML output to be served by NaviServer as /munin/
-      - ${oacs_serverroot}/www/munin-container:/var/www/munin
+      - ${hostroot}/www/munin-container:/var/www/munin
       # Optional: custom node config fragments
-      # - ${oacs_serverroot}/etc/munin/munin-conf.d:/etc/munin/munin-conf.d:ro
+      # - ${hostroot}/etc/munin/munin-conf.d:/etc/munin/munin-conf.d:ro
       - /etc/passwd:/host-etc/passwd:ro    # for UID mapping
 
     # No ports exposed – this container only generates files.
@@ -292,13 +292,13 @@ services:
       
 secrets:
   psql_password:
-    file: ${oacs_serverroot}/etc/secrets/psql_password.txt
+    file: ${hostroot}/etc/secrets/psql_password.txt
     
   cluster_secret:
-    file: ${oacs_serverroot}/etc/secrets/cluster_secret.txt
+    file: ${hostroot}/etc/secrets/cluster_secret.txt
 
   parameter_secret:
-    file: ${oacs_serverroot}/etc/secrets/parameter_secret.txt
+    file: ${hostroot}/etc/secrets/parameter_secret.txt
     
 volumes:
   oacs_certificates:
