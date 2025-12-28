@@ -52,9 +52,11 @@ When installing the system with `oacs-5-10` as database name (default) and `open
 
 Named volumes (persistent):
 
-* `db_data` – PostgreSQL data
-* `oacs_data` – `${oacs_serverroot:-/var/www/openacs}` (OpenACS server root + filestore content)
-* `${secretsdir:-oacs_secrets}` – `/run/secrets` (contains `psql_password`)
+* `db_data`   - PostgreSQL data
+* `oacs_data` - OpenACS tree; when `$hostroot` is set: OpenACS server root on the host
+* `oacs_log`  - OpenACS log directory; when `$logdir` is set: log directory on the host
+* `oacs_certificates` - OpenACS certificates directory; when `secretsdir` is set: certificates directory on the host
+* `oacs_secrets` - OpenACS secrets directory; when `secretsdir` is set: secretsdir directory on the host
 
 Notes:
 
@@ -74,9 +76,6 @@ These parameters can be set via environment variables (shell or a `.env` file pl
   Default: `Europe/Vienna`
   Time zone used by containers.
 
-* `service`
-  Default: `oacs-5-10`
-  Used as OpenACS server name and as PostgreSQL database name.
 
 * `hostname`
   Default: `localhost`
@@ -97,6 +96,11 @@ These parameters can be set via environment variables (shell or a `.env` file pl
 
 * `db_port`
   Default: `5432`
+
+* `db_name`
+  Default: `oacs-5-10`
+  Used as PostgreSQL database name.
+
 
 ### Ports and bind addresses
 
