@@ -53,7 +53,7 @@ When installing the system with `oacs-5-10` as database name (default) and `open
 Named volumes (persistent):
 
 * `db_data` – PostgreSQL data
-* `oacs_data` – `/var/www/${service:-openacs}` (OpenACS server root + filestore content)
+* `oacs_data` – `${oacs_serverroot:-/var/www/openacs}` (OpenACS server root + filestore content)
 * `${secretsdir:-oacs_secrets}` – `/run/secrets` (contains `psql_password`)
 
 Notes:
@@ -191,7 +191,7 @@ Then either keep the default `nsdconfig` (it already points there) or override i
 ### Use a custom install.xml
 
 The OpenACS entrypoint can consume an installation XML (see image documentation).
-A typical approach is to bind-mount your chosen file to `/var/www/openacs/install.xml` (or whatever your setup scripts expect).
+A typical approach is to bind-mount your chosen file to `${oacs_serverroot:-/var/www/openacs}/install.xml` (or whatever your setup scripts expect).
 
 ### Keep data outside Docker volumes
 
@@ -201,7 +201,7 @@ For development or backups you may prefer bind mounts:
 services:
   openacs:
     volumes:
-      - ./data/oacs:/var/www/${service:-openacs}
+      - ./data/oacs:${oacs_serverroot:-/var/www/openacs}
   postgres:
     volumes:
       - ./data/pg:/var/lib/postgresql/data/18/docker
