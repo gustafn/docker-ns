@@ -51,14 +51,14 @@ services:
     command: >
       /bin/sh -c "
         . /scripts/container-setup-openacs.sh \\
-        && /usr/local/ns/bin/nsd -i -t ${nsdconfig:-/usr/local/ns/conf/openacs-config.tcl} -u nsadmin -g nsadmin
+        && /usr/local/ns/bin/nsd -i -t $${nsdconfig:-/usr/local/ns/conf/openacs-config.tcl} -u nsadmin -g nsadmin
       "
     volumes:
       # The following volumes can be named (default) or host paths.
       # If it is a host path: must exist/ be writable.
       - ${hostroot:-oacs_data}:/var/www/openacs
       - ${secretsdir:-oacs_secrets}:/run/secrets
-      - ${certificatesdir:-oacs_certificates}:/var/www/openacs/certificates
+      - ${certificatesdir:-oacs_certificates}:/var/lib/naviserver/certificates
       - ${logdir:-oacs_log}:/var/www/openacs/log
 
       - /var/run/docker.sock:/var/run/docker.sock
@@ -89,8 +89,8 @@ services:
       oacs_loopbackport: ${internal_loopbackport:-8888}
       oacs_hostname: ${hostname:-localhost}
       oacs_serverroot: /var/www/openacs
-      oacs_certificate: ${certificate:-}
-      oacs_logdir: ${logdir:-/var/www/openacs/log}
+      oacs_certificate: ""      # computed via container setup script
+      oacs_logdir: /var/www/openacs/log
       oacs_tag: ${oacs_tag:-oacs-5-10}
       oacs_clusterSecret: ${clusterSecret:-}
       oacs_parameterSecret: ${parameterSecret:-}
@@ -112,7 +112,7 @@ services:
       #- db_data:/var/lib/postgresql/data          # for pg 10-17
       - db_data:/var/lib/postgresql/data/18/docker # for pg18+
       - ${secretsdir:-oacs_secrets}:/run/secrets
-      - ${certificatesdir:-oacs_certificates}:/var/www/openacs/certificates
+      - ${certificatesdir:-oacs_certificates}:/var/lib/naviserver/certificates
 
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${db_user:-openacs} --dbname ${db_name:-oacs-5-10}"]
@@ -126,4 +126,3 @@ volumes:
   oacs_log:
   oacs_secrets:
   oacs_certificates:
-

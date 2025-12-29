@@ -5,7 +5,7 @@ This example runs a complete, self-contained OpenACS stack using:
 - **OpenACS container**: `gustafn/openacs:latest` (defaults to the recommended base via the `latest` alias)
 - **PostgreSQL container**: `postgres:18`
 
-It is intended as a *minimal* and *reproducible* starting point.  
+It is intended as a *minimal* and *reproducible* starting point.
 It works without providing any stack-level environment variables.
 
 ---
@@ -50,16 +50,29 @@ When installing the system with `oacs-5-10` as database name (default) and `open
 
 ## What this stack creates
 
-Named volumes (persistent):
+This stack creates the following Docker resources (persistent):
 
-* `db_data`   - PostgreSQL data
-* `oacs_data` - OpenACS tree; when `$hostroot` is set: OpenACS server root on the host
-* `oacs_log`  - OpenACS log directory; when `$logdir` is set: log directory on the host
-* `oacs_certificates` - OpenACS certificates directory; when `secretsdir` is set: certificates directory on the host
-* `oacs_secrets` - OpenACS secrets directory; when `secretsdir` is set: secretsdir directory on the host
+* `db_data`
+   Named volume storing the PostgreSQL database data.
+
+* `oacs_data`
+   Named volume storing the OpenACS installation and content repository.
+
+* `oacs_certificates`
+   Named volume storing TLS certificates when `certificatesdir` is not set.
+
+* `oacs_secrets`
+   Named volume storing database passwords and secrets.
+
+* `oacs_log`
+  Named volume storing OpenACS and NaviServer log files when `logdir`
+  is not set.
 
 Notes:
 
+* External paths are introduced only via bind mounts. OpenACS and NaviServer
+  always operate on canonical internal paths and never reference host paths
+  directly
 * The OpenACS container expects the database password via `oacs_db_passwordfile=/run/secrets/psql_password`.
 * The Postgres container reads `POSTGRES_PASSWORD_FILE=/run/secrets/psql_password`.
 * The secret is stored in a named volume by default (see “Secrets” below).
@@ -85,6 +98,39 @@ These parameters can be set via environment variables (shell or a `.env` file pl
   Default: `/usr/local/ns/conf/openacs-config.tcl`
   Path to the NaviServer config file used for startup.
 
+### External paths and storage backends
+
+For stateful components, the OpenACS container distinguishes between
+**internal storage** (Docker named volumes, default) and **externally managed
+paths** (bind mounts).
+
+Each of the following parameters may be set either to a Docker volume name
+or to a host directory path:
+
+* `hostroot`
+  Default: `oacs_data`
+  Mounted to `/var/www/openacs` inside the container.
+  Holds the OpenACS code, configuration, and content repository.
+
+* `logdir`
+  Default: `oacs_log`
+  Mounted to `/var/www/openacs/log`.
+  Controls where log files are stored on the host.
+
+* `certificatesdir`
+  Default: `oacs_certificates`
+  Mounted to `/var/lib/naviserver/certificates`.
+  Used as the managed TLS certificate store.
+
+* `secretsdir`
+  Default: `oacs_secrets`
+  Mounted to `/run/secrets`.
+  Used for database passwords and other secrets.
+
+If a host directory is provided, it must exist and be writable by the
+effective container user.
+
+
 ### Database settings
 
 * `db_user`
@@ -100,7 +146,6 @@ These parameters can be set via environment variables (shell or a `.env` file pl
 * `db_name`
   Default: `oacs-5-10`
   Used as PostgreSQL database name.
-
 
 ### Ports and bind addresses
 
@@ -143,6 +188,9 @@ Bind to a public IPv6 address:
 ```sh
 ipv6address=2001:db8::123 httpport=80 httpsport=443 docker compose up -d
 ```
+
+---
+
 
 ---
 
@@ -313,7 +361,7 @@ You can create the secret file using a temporary helper container from Portainer
    ```
 5. Add a volume mapping:
    * Volume: `oacs_secrets`
-   * Container path: `/run/secrets`   
+   * Container path: `/run/secrets`
 6. Start the container once, then remove it
 
 ---
