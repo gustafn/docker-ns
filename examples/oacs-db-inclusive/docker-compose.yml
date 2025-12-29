@@ -109,8 +109,7 @@ services:
       POSTGRES_DB: ${db_name:-oacs-5-10}
 
     volumes:
-      #- db_data:/var/lib/postgresql/data          # for pg 10-17
-      - db_data:/var/lib/postgresql/data/18/docker # for pg18+
+      - db_data:/var/lib/postgresql
       - ${secretsdir:-oacs_secrets}:/run/secrets
       - ${certificatesdir:-oacs_certificates}:/var/lib/naviserver/certificates
 
