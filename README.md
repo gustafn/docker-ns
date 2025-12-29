@@ -129,20 +129,6 @@ This avoids duplication and keeps example files readable.
 
 ---
 
-Good catch — this is exactly the place where users can shoot themselves in the foot if we’re not explicit.
-
-Below is a **drop-in replacement** for the *“Building the images”* section in the **top-level README.md**.
-It keeps your structure but adds:
-
-* a **clear warning** about `buildx` + Docker Hub permissions
-* a **strong recommendation** to use `-local` for modified sources
-* **concrete examples of resulting image tags**
-* guidance on how to reference these tags in `docker-compose.yml`
-
-You can paste this verbatim over the existing section.
-
----
-
 ## Building the images
 
 The top-level `Makefile` orchestrates all Docker image builds in this repository.
