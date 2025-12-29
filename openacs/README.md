@@ -22,24 +22,7 @@ Source repositories:
 - [NaviServer](https://github.com/naviserver-project)
 - [OpenACS](https://github.com/openacs)
 
----
-
-## Image overview
-
-Published as [gustafn/openacs](https://hub.docker.com/repository/docker/gustafn/openacs/)
-
-
-### Supported tags
-
-- `latest-trixie` (recommended default)
-- `latest-bookworm`
-- `latest-alpine`
-- `latest` → alias to the recommended default base
-
-Versioned tags follow the same scheme, e.g.:
-
-- `5.0.3-trixie`
-- `5.0.3` → alias to `5.0.3-trixie`
+The image is published as [gustafn/openacs](https://hub.docker.com/repository/docker/gustafn/openacs/)
 
 ---
 
