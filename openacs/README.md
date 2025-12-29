@@ -61,6 +61,7 @@ This design:
 The normalized filesystem layout only affects how external paths are mapped
 into the container and does not change OpenACS or NaviServer semantics.
 
+
 ### Canonical internal paths
 
 Inside the container, the following paths are fixed:
@@ -73,6 +74,20 @@ Inside the container, the following paths are fixed:
 | Logs | `/var/www/openacs/log` |
 | Managed TLS certificates | `/var/lib/naviserver/certificates` |
 | Secrets | `/run/secrets` |
+
+For stateful components (logs, certificates, secrets, data), the container
+distinguishes between:
+
+* **optional internal storage**, provided via named Docker volumes (default)
+* **externally managed paths**, provided explicitly by the user via bind mounts
+
+If no external path is specified, the container uses a named volume and assumes
+that it owns the lifecycle of the data stored there (including permissions and
+future automated management).
+
+If an external path is provided (e.g. `certificatesdir`, `logdir`, `secretsdir`),
+the container assumes that the user manages this data and disables any implicit
+assumptions about creation, renewal, or cleanup.
 
 External directories are always mounted to these locations.
 Host paths never appear in OpenACS or NaviServer configuration files.
