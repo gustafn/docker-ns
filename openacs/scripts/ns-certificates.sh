@@ -11,9 +11,9 @@
 #   ns_setup_certificates <serverroot> <hostname> [<passed_cert>]
 #
 # Inputs:
-#   serverroot   Required. Application/server root directory.
-#   hostname     Required. Used for default PEM name and CN/SAN for self-signed.
-#   passed_cert  Optional. Full path to an existing PEM (key+cert).
+#   default_certdir  Required. Default directory for managed certs (writable store)
+#   hostname         Required. Used for default PEM name and CN/SAN for self-signed.
+#   passed_cert      Optional. Full path to an existing PEM (key+cert).
 #
 # Mode selection (optional, via environment):
 #   certificatesdir
@@ -30,39 +30,27 @@
 #   On success: prints the resolved certificate path to stdout.
 #   On failure: prints diagnostics to stderr and returns non-zero.
 #
-# Variables:
-#   Read (from environment):
-#     certificatesdir               If set and non-empty => external cert management mode.
-#     ns_certs_external             Optional override (1/0). If set, overrides certificatesdir detection.
-#     ns_allow_self_signed          Optional (1/0). Default: 1 in internal mode, 0 in external mode.
-#     ns_fail_hard_missing_explicit Optional (1/0). Default: 1.
-#     ns_certdir                    Optional override of cert directory (default: <serverroot>/certificates).
-#     ns_default_cert               Optional override of default cert path (default: <ns_certdir>/<hostname>.pem).
+# Environment inputs (optional):
+#   ns_certdir            - overrides DEFAULT_CERTDIR (managed cert store)
+#   certificatesdir       - if set/non-empty: treat cert store as externally managed;
+#                           do not copy/generate, just validate/use what is there
+#   ns_default_cert       - overrides default target cert path
 #
-#   Set/used (global in caller shell; POSIX sh has no local vars):
-#     ns_serverroot   (function arg) serverroot passed to ns_setup_certificates
-#     ns_hostname     (function arg) hostname passed to ns_setup_certificates
-#     passed_cert     (function arg) optional input cert path
-#     ns_certdir      resolved/override cert directory
-#     ns_default_cert resolved/override default cert path
-#     external_certs  computed mode flag (0/1)
-#     cert_source     computed mode label (internal-default / external-certificatesdir)
-#     cert            resolved certificate path used internally (printed on stdout)
-#     tmpcert         temporary file path used during atomic copy (internal mode)
-#     tmpkey/tmpcrt   temporary files used for self-signed generation
-
+# Outputs:
+#   Prints resolved certificate path on stdout.
+#
 
 ns_log() { printf '%s\n' "$*" >&2; }
 
 ns_setup_certificates() {
-  ns_serverroot=$1
+  default_ns_certdir=$1
   ns_hostname=$2
   passed_cert=${3-}
 
-  : "${ns_serverroot:?}"
+  : "${default_ns_certdir:?}"
   : "${ns_hostname:?}"
 
-  ns_certdir=${ns_certdir:-"$ns_serverroot/certificates"}
+  ns_certdir=${ns_certdir:-"$default_ns_certdir"}
   ns_default_cert=${ns_default_cert:-"$ns_certdir/$ns_hostname.pem"}
 
   if [ -n "${ns_certs_external+x}" ]; then
