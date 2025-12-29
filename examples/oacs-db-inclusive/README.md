@@ -244,19 +244,7 @@ A typical approach is to bind-mount your chosen file to `${oacs_serverroot:-/var
 
 ### Keep data outside Docker volumes
 
-For development or backups you may prefer bind mounts:
-
-```yaml
-services:
-  openacs:
-    volumes:
-      - ./data/oacs:${oacs_serverroot:-/var/www/openacs}
-  postgres:
-    volumes:
-      - ./data/pg:/var/lib/postgresql/data/18/docker
-```
-
-(Adjust ownership/permissions to match the container user expectations.)
+For development or backups you may prefer bind mounts. Be aware that you will have to adjust ownership/permissions to match the container user expectations. A larger example is provided in [openacs-org](../openacs-org).
 
 ### Run multiple instances in parallel
 
