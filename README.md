@@ -129,9 +129,23 @@ This avoids duplication and keeps example files readable.
 
 ---
 
+Good catch — this is exactly the place where users can shoot themselves in the foot if we’re not explicit.
+
+Below is a **drop-in replacement** for the *“Building the images”* section in the **top-level README.md**.
+It keeps your structure but adds:
+
+* a **clear warning** about `buildx` + Docker Hub permissions
+* a **strong recommendation** to use `-local` for modified sources
+* **concrete examples of resulting image tags**
+* guidance on how to reference these tags in `docker-compose.yml`
+
+You can paste this verbatim over the existing section.
+
+---
+
 ## Building the images
 
-The top-level `Makefile` orchestrates all builds.
+The top-level `Makefile` orchestrates all Docker image builds in this repository.
 
 Typical commands:
 
@@ -141,18 +155,126 @@ make
 
 # Build only OpenACS
 make build-openacs
+```
 
-# Multi-arch build & push (default base)
-make buildx-openacs
+### Local development builds (recommended for modifications)
 
-# Versioned build
-make VERSION_NS=5.0.3 RELEASE_TAG=5.0.3 buildx-openacs
+If you modify **any** of the following:
 
+* shell scripts
+* Dockerfiles
+* configuration templates
+* docker-compose examples
+* container setup logic
+
+you should **always build a local image** using the `-local` tag.
+
+```sh
 # Local development build (adds -local tag, no push)
 make LOCAL_TAG=-local build-openacs
 ```
 
-Build stamps ensure images are rebuilt only when their ingredients change.
+This produces an image such as:
+
+```text
+gustafn/openacs:latest-local
+```
+
+or (with explicit versions):
+
+```text
+gustafn/openacs:5.0.3-local
+```
+
+You can then reference this image safely in your own `docker-compose.yml`:
+
+```yaml
+services:
+  openacs:
+    image: gustafn/openacs:latest-local
+```
+
+This ensures:
+
+* your changes are actually used
+* no accidental overwriting of published images
+* reproducible local testing
+
+---
+
+### Multi-architecture builds (`buildx`)
+
+```sh
+# Multi-arch build & push (default base)
+make buildx-openacs
+```
+
+**Important**
+`buildx` builds **and pushes** images to Docker Hub.
+
+This requires:
+
+* write permissions to the `gustafn/*` repositories
+* a logged-in Docker client (`docker login`)
+* intentional use
+
+If you do **not** have push rights, this command will fail.
+
+---
+
+### Versioned builds
+
+```sh
+# Versioned build
+make VERSION_NS=5.0.3 RELEASE_TAG=5.0.3 buildx-openacs
+```
+
+This results in tags such as:
+
+```text
+gustafn/openacs:5.0.3
+gustafn/openacs:5.0.3-trixie
+```
+
+These tags are intended for **published, reproducible releases** only.
+
+---
+
+### Summary: which build should I use?
+
+| Use case                        | Recommended build                     |
+| ------------------------------- | ------------------------------------- |
+| Testing local changes           | `make LOCAL_TAG=-local build-openacs` |
+| Developing container logic      | `-local` tag                          |
+| Running examples from this repo | published tags (`latest`, versioned)  |
+| Publishing official images      | `buildx-*` (with push rights)         |
+
+As a rule of thumb:
+
+> **If you changed something locally, never rely on `latest`.
+> Always build and use a `-local` image.**
+
+---
+
+### Notes on image naming
+
+The final image tag is composed from:
+
+* base name: `gustafn/openacs`
+* optional version: `5.0.3`
+* optional distro suffix: `-trixie`, `-bookworm`, …
+* optional local marker: `-local`
+
+Examples:
+
+```text
+gustafn/openacs:latest
+gustafn/openacs:latest-local
+gustafn/openacs:5.0.3
+gustafn/openacs:5.0.3-local
+```
+
+These tags can be freely mixed in `docker-compose.yml` depending on your workflow.
 
 ---
 
