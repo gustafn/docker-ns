@@ -6,8 +6,8 @@ derived from the live OpenACS.org deployment.
 It is intentionally more complex than the `oacs-db-inclusive` example and
 is meant as a **reference architecture** for real-world OpenACS installations.
 
-> NOTE:  
-> This example is **sanitized and snapshot-based**.  
+> **NOTE**
+> This example is **sanitized and snapshot-based**.
 > It does *not* necessarily reflect the current production configuration of
 > openacs.org. Site-specific, private, or experimental settings have been
 > removed or simplified.
@@ -18,72 +18,100 @@ is meant as a **reference architecture** for real-world OpenACS installations.
 
 This setup is designed to support:
 
-- long-lived OpenACS installations
-- multiple parallel instances on the same host
-- testing different NaviServer / Tcl combinations against one OpenACS tree
-- production-like deployments with externalized state
-- clear separation between *binaries* and *site data*
+* long-lived OpenACS installations
+* multiple parallel instances on the same host
+* testing different NaviServer / Tcl combinations against one OpenACS tree
+* production-like deployments with externalized state
+* clear separation between *binaries* and *site data*
 
 ---
 
-## Key design choices
+## Core design principles
+
+### Normalized internal filesystem layout
+
+All containers operate on a **fixed internal directory structure**.
+Host paths are introduced *only* via Docker volumes or bind mounts.
+
+Inside the containers, the following paths are canonical:
+
+| Purpose                  | Internal path                      |
+| ------------------------ | ---------------------------------- |
+| OpenACS server root      | `/var/www/openacs`                 |
+| Configuration files      | `/var/www/openacs/etc`             |
+| Logs                     | `/var/www/openacs/log`             |
+| Managed TLS certificates | `/var/lib/naviserver/certificates` |
+| Secrets                  | `/run/secrets`                     |
+
+OpenACS and NaviServer configuration files **never reference host paths**.
+
+---
 
 ### 1. Containers hold binaries, not state
 
 All containers are **stateless**:
 
-- OpenACS application code
-- NaviServer binaries
-- Postfix (mail relay)
-- Munin (monitoring)
+* OpenACS application code
+* NaviServer binaries
+* Postfix (mail relay)
+* Munin (monitoring)
 
 All **stateful data** lives outside containers:
 
-- OpenACS tree
-- logs
-- secrets
-- database
+* OpenACS tree
+* logs
+* secrets
+* database
+* TLS certificates
 
 This allows:
-- easy upgrades
-- simple backups
-- reproducible rebuilds
-- fast rollback
+
+* easy upgrades
+* simple backups
+* reproducible rebuilds
+* fast rollback
 
 ---
 
-### 2. External OpenACS tree
+### 2. External OpenACS tree (site data)
 
-The complete OpenACS installation is mounted from the host:
+The complete OpenACS installation is mounted from the host into the
+canonical internal location:
 
 ```text
-${hostroot}
+/var/www/openacs
+```
+
+The host path is provided via the stack-level variable:
+
+```
+hostroot
 ```
 
 This enables:
 
 * running multiple containers against the same code base
 * comparing different NaviServer versions
-* development and production sharing the same layout
+* sharing a consistent layout between development and production
 
 ---
 
 ### 3. Database via Unix domain socket
 
-PostgreSQL is accessed via a **domain socket**, not TCP:
+PostgreSQL is accessed via a **Unix domain socket**, not TCP:
 
 * no database port exposed
 * lower latency
 * reduced attack surface
 * supports non-standard database ports
 
-Socket path example:
+Socket path example on the host:
 
 ```text
 /tmp/.s.PGSQL.<db_port>
 ```
 
-This socket is mounted into containers that need DB access.
+The socket is mounted into containers that require database access.
 
 ---
 
@@ -93,8 +121,8 @@ The site is reachable via **both IPv4 and IPv6**.
 
 Ports are explicitly bound to:
 
-* an IPv4 address
-* an IPv6 address
+* one IPv4 address
+* one IPv6 address
 
 This makes dual-stack behavior explicit and testable.
 
@@ -102,7 +130,7 @@ This makes dual-stack behavior explicit and testable.
 
 ### 5. Tailored NaviServer configuration
 
-The NaviServer configuration file is **site-specific**:
+The NaviServer configuration file is **site-specific** and supports:
 
 * multiple domain names
 * multiple NaviServer servers
@@ -112,28 +140,70 @@ The NaviServer configuration file is **site-specific**:
 
 The file provided here:
 
-```
+```text
 openacs.org-config-example.tcl
 ```
 
 is a **template / example**, not a production snapshot.
 
----
-
-### 6. Non-standard certificate location
-
-TLS certificates are stored **outside the container**, at a site-specific path:
+The variable `nsdconfig` is interpreted as a **relative filename** under:
 
 ```text
-${hostroot}/etc/
+/var/www/openacs/etc/
 ```
 
-The same certificate is reused by:
+---
+
+### 6. TLS certificates (managed store)
+
+TLS certificates are **always used** from the managed certificate store:
+
+```text
+/var/lib/naviserver/certificates/<hostname>.pem
+```
+
+#### Certificate seed (`certificate`)
+
+The variable `certificate` specifies a **relative PEM filename** under:
+
+```text
+/var/www/openacs/certificates/
+```
+
+Example:
+
+```text
+certificate=openacs.org.pem
+```
+
+Seed lookup order:
+
+1. `/var/www/openacs/certificates/<certificate>`
+2. legacy fallback: `/var/www/openacs/etc/<certificate>`
+
+If a readable seed certificate is found, it is copied into the managed
+certificate store. The managed copy is then used by:
 
 * NaviServer (HTTPS)
 * Postfix (SMTP TLS)
 
-This simplifies certificate management and rotation.
+#### Managed vs. external certificates
+
+By default, a writable Docker volume is mounted at:
+
+```text
+/var/lib/naviserver/certificates
+```
+
+This directory is owned by the container and is suitable for:
+
+* generated certificates
+* copied seed certificates
+* future automated renewal
+
+If `certificatesdir` is set to a host path, certificates are treated as
+**externally managed**. In that case, no automatic creation or renewal
+is assumed.
 
 ---
 
@@ -147,10 +217,10 @@ LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libtcmalloc_minimal.so.4
 
 In combination with:
 
-* `SYSTEM_MALLOC` settings in Tcl
+* `SYSTEM_MALLOC` Tcl settings
 * NaviServer/module configuration
 
-this significantly reduces memory footprint under load.
+this can significantly reduce memory footprint under load.
 
 ---
 
@@ -161,9 +231,9 @@ this significantly reduces memory footprint under load.
 Main OpenACS / NaviServer container.
 
 * runs the site
-* exposes HTTP/HTTPS
+* exposes HTTP and HTTPS
 * uses a site-specific NaviServer config
-* connects to DB via domain socket
+* connects to PostgreSQL via domain socket
 * optionally uses tcmalloc
 
 ---
@@ -174,7 +244,7 @@ Postfix-based outgoing SMTP relay.
 
 * internal-only (not exposed on host)
 * used by `nssmtpd` inside OpenACS
-* shares TLS certificate with OpenACS
+* reads TLS certificate from the managed certificate store
 
 ---
 
@@ -183,7 +253,7 @@ Postfix-based outgoing SMTP relay.
 Collects metrics from OpenACS.
 
 * uses NaviServer-provided Munin plugins
-* talks to OpenACS over internal network
+* talks to OpenACS over the internal Docker network
 * can access PostgreSQL via domain socket
 
 ---
@@ -194,70 +264,67 @@ Generates Munin graphs and static HTML.
 
 * no exposed ports
 * writes files only
-* output served by OpenACS as `/munin/`
+* output is served by OpenACS as `/munin/`
 
 ---
 
 ## Stack-level environment variables
 
-The following variables are intended as **boilerplate knobs** for
-site-specific adaptations.
-
-They are typically set via:
+These variables act as **deployment knobs** and are typically set via:
 
 * `.env` files
 * Portainer stack variables
 * shell environment
 
+---
+
 ### Required variables
 
-| Variable    | Description                                  |
-| ----------- | -------------------------------------------- |
-| `hostname`  | DNS name of the site (e.g. `openacs.org`)    |
-| `hostroot`  | Path to the OpenACS installation on the host |
-| `logdir`    | Directory for logs and runtime state         |
+| Variable   | Description                                   |
+| ---------- | --------------------------------------------- |
+| `hostname` | DNS name of the site (e.g. `openacs.org`)     |
+| `hostroot` | Host path or volume name for the OpenACS tree |
+| `logdir`   | Host path or volume name for logs             |
 
 ---
 
-### Optional but common variables
+### Optional variables
 
-#### NaviServer configuration
+#### NaviServer
 
-| Variable                | Default                                 | Purpose                                 |
-| ----------------------- | --------------------------------------- | --------------------------------------- |
-| `nsdconfig`             | `/usr/local/ns/conf/openacs-config.tcl` | Path to site-specific NaviServer config |
-| `internal_loopbackport` | `8888`                                  | Internal loopback server port           |
-
-This allows replacing the config file without rebuilding the image.
+| Variable                | Default | Purpose                                         |
+| ----------------------- | ------- | ----------------------------------------------- |
+| `nsdconfig`             | empty   | Relative filename under `/var/www/openacs/etc/` |
+| `internal_loopbackport` | `8888`  | Internal loopback server port                   |
 
 ---
 
-#### Networking (host bindings)
+#### Networking
 
-| Variable      | Default     | Purpose              |
-| ------------- | ----------- | -------------------- |
-| `ipaddress`   | `127.0.0.1` | IPv4 address to bind |
-| `ipv6address` | `::1`       | IPv6 address to bind |
-| `httpport`    | auto        | External HTTP port   |
-| `httpsport`   | auto        | External HTTPS port  |
+| Variable      | Default     | Purpose             |
+| ------------- | ----------- | ------------------- |
+| `ipaddress`   | `127.0.0.1` | IPv4 bind address   |
+| `ipv6address` | `::1`       | IPv6 bind address   |
+| `httpport`    | auto        | External HTTP port  |
+| `httpsport`   | auto        | External HTTPS port |
 
 ---
 
 #### TLS / certificates
 
-| Variable      | Default                        | Purpose                   |
-| ------------- | ------------------------------ | ------------------------- |
-| `certificate` | `${hostroot}/etc/certfile.pem` | TLS cert for HTTPS + SMTP |
+| Variable      | Default           | Purpose               |
+| ------------- | ----------------- | --------------------- |
+| `certificate` | `${hostname}.pem` | Relative PEM filename |
 
 ---
 
 #### Database
 
-| Variable  | Default     | Purpose                       |
-| --------- | ----------- | ----------------------------- |
-| `db_user` | `openacs`   | DB user                       |
-| `db_host` | `localhost` | DB host (socket-based)        |
-| `db_port` | `5432`      | DB port (affects socket name) |
+| Variable  | Default     | Purpose                      |
+| --------- | ----------- | ---------------------------- |
+| `db_user` | `openacs`   | Database user                |
+| `db_host` | `localhost` | Database host (socket-based) |
+| `db_port` | `5432`      | Database port (socket name)  |
 
 Secrets are always file-based and external.
 
@@ -276,39 +343,37 @@ Secrets are always file-based and external.
 
 Secrets are **not stored in this repository**.
 
-Expected files:
+Expected files (mounted into `/run/secrets`):
 
 ```text
-${hostroot}/etc/secrets/psql_password.txt
-${hostroot}/etc/secrets/cluster_secret.txt
-${hostroot}/etc/secrets/parameter_secret.txt
+psql_password
+cluster_secret
+parameter_secret
 ```
 
-They are mounted via Docker secrets and read by startup scripts.
+They are read by startup scripts and never embedded into images.
 
 ---
 
 ## Files in this directory
 
 * `docker-compose.yml`
-  Full stack definition
+  Full production-style stack definition
 
 * `openacs.org-config-example.tcl`
   Sanitized example of a site-specific NaviServer configuration
 
 * `.env.example`
-  This stack is designed to be configured via a `.env` file, like the specified one.
+  Template for stack-level configuration
 
+To get started:
 
-   To get started:
+```sh
+cp .env.example .env
+```
 
-   ```sh
-   cp .env.example .env
-   ```
-
-   Adjust the values to match your host paths, IP addresses, and site name.
-   No secrets have to be stored in the .env file; all credentials are provided via
-   external secret files mounted into the containers.
+Adjust values to match your host paths, IP addresses, and site name.
+No secrets are stored in `.env`.
 
 ---
 
@@ -322,7 +387,7 @@ Use this setup if you want:
 
 For a minimal, self-contained setup, see:
 
-```
+```text
 examples/oacs-db-inclusive/
 ```
 
@@ -330,17 +395,14 @@ examples/oacs-db-inclusive/
 
 ## Final notes
 
-This example reflects **operational experience** rather than minimalism.
-It is meant to be adapted, not copied verbatim.
-
-Treat it as a toolbox and reference, not a prescription.
+This example reflects **operational experience**, not minimalism.
+It is intended as a **reference architecture**, not a copy-and-paste recipe.
 
 ---
 
 ## License
 
-This project is subject to the terms of the Mozilla Public
-License, v. 2.0. If a copy of the MPL can be obtained from
-https://mozilla.org/MPL/2.0/.
-
+This project is subject to the terms of the Mozilla Public License, v. 2.0.
 Copyright © 2025 Gustaf Neumann
+
+
