@@ -43,6 +43,42 @@ Versioned tags follow the same scheme, e.g.:
 
 ---
 
+## Filesystem layout and design principles
+
+The OpenACS container follows a **normalized internal filesystem layout**.
+
+All externally provided paths (bind mounts or named volumes) are mapped into a
+**fixed internal directory structure**. OpenACS, NaviServer, and all helper
+scripts only ever reference **internal paths**, never host paths.
+
+This design:
+
+* avoids host-specific paths in configuration files
+* simplifies upgrades and container restarts
+* works reliably with Docker volumes, bind mounts, and NFS
+* enables future features such as automated certificate renewal
+
+The normalized filesystem layout only affects how external paths are mapped
+into the container and does not change OpenACS or NaviServer semantics.
+
+### Canonical internal paths
+
+Inside the container, the following paths are fixed:
+
+| Purpose | Internal path |
+|--------|---------------|
+| OpenACS server root | `/var/www/openacs` |
+| Configuration files | `/var/www/openacs/etc` |
+| Application data / content repository | `/var/www/openacs` |
+| Logs | `/var/www/openacs/log` |
+| Managed TLS certificates | `/var/lib/naviserver/certificates` |
+| Secrets | `/run/secrets` |
+
+External directories are always mounted to these locations.
+Host paths never appear in OpenACS or NaviServer configuration files.
+
+---
+
 ## Runtime behavior
 
 On container startup, the image typically performs:
@@ -74,6 +110,15 @@ These are typically provided via environment variables and volumes.
 The following environment variables are recognized by the OpenACS container.
 
 ### General settings
+
+The canonical internal server root is:
+
+```
+/var/www/openacs
+```
+
+This value should not be changed. External server roots must be bind-mounted to
+this location.
 
 | Variable | Default | Description |
 |--------|--------|-------------|
@@ -112,6 +157,54 @@ The password file must exist at container startup.
 
 ---
 
+## Configuration file (`nsdconfig`)
+
+If `nsdconfig` is set, it is interpreted as a **relative filename under**:
+
+```
+/var/www/openacs/etc/
+```
+
+Example:
+
+```
+nsdconfig=openacs.org-config.tcl
+```
+
+This resolves internally to:
+
+```
+/var/www/openacs/etc/openacs.org-config.tcl
+```
+
+If `nsdconfig` is unset, the legacy default
+`/usr/local/ns/conf/openacs-config.tcl` is used.
+
+---
+
+## User and permissions model
+
+All OpenACS and NaviServer processes run as:
+
+```
+nsadmin:nsadmin
+```
+
+To avoid permission issues on bind-mounted directories, the container supports
+UID/GID alignment with the host:
+
+```yaml
+environment:
+  HOST_USER: nsadmin
+  HOST_GROUP: nsadmin
+```
+
+When enabled, files created inside the container remain writable on the host.
+This is especially important for NFS and shared filesystems.
+
+
+---
+
 ### Cluster / secrets
 
 | Variable | Default | Description |
@@ -142,61 +235,62 @@ The OpenACS container includes support for HTTPS/TLS by managing a certificate f
 
 ### Default Behavior
 
-By default, if no certificate is provided, the entrypoint will generate a **self-signed certificate** for the hostname (`oacs_hostname`) and store it under the default certificates directory:
+By default, if no certificate is provided, the entrypoint will
+generate a **self-signed certificate** for the hostname
+(`oacs_hostname`) and store it in the **managed certificate
+store** following the following naming convention:
 
 ```
-/var/www/openacs/certificates/${oacs_hostname}.pem
+/var/lib/naviserver/certificates/<hostname>.pem
 ```
 
-This directory is exposed as a persistent volume so the certificate will survive container restarts:
+### `certificate`
+
+The variable `certificate` specifies a **relative PEM filename** under:
+
+```
+/var/www/openacs/certificates/
+```
+
+Example:
+
+```
+certificate=openacs.org.pem
+```
+
+Seed certificate lookup order:
+
+1. `/var/www/openacs/certificates/<certificate>`
+2. legacy fallback: `/var/www/openacs/etc/<certificate>`
+
+If a readable seed certificate is found, it is copied into the managed
+certificate store. If not, a self-signed certificate may be generated (unless
+external certificate management is enabled).
+
+### `certificatesdir`
+
+By default, a writable named volume is mounted at:
+
+```
+/var/lib/naviserver/certificates
+```
+
+This directory is used for:
+
+* generated certificates
+* copied seed certificates
+* automated renewal (future feature)
+
+If `certificatesdir` is set, the directory is treated as **externally managed**:
 
 ```yaml
-services:
-  openacs:
-    volumes:
-      - ${certificatesdir:-oacs_certificates}:/var/www/${service:-openacs}/certificates
+volumes:
+  - /path/on/host/certificates:/var/lib/naviserver/certificates
 ```
 
-This default (`oacs_certificates`) is a named volume that persists the generated self-signed certificate and supports automated renewal workflows (e.g., via Let’s Encrypt tooling that might be integrated later).
+In this mode, certificates must already exist and no automatic generation or
+renewal is assumed. This mirrors the behavior of `/run/secrets`.
 
-### Providing Your Own Certificate
-
-If you have an existing certificate (combined key+cert in one PEM file), you can specify it via the `oacs_certificate` environment variable:
-
-```yaml
-services:
-  openacs:
-    environment:
-      oacs_certificate: "/run/secrets/my_cert.pem"
-```
-
-* When **no `certificatesdir` is set** (internal mode), the entrypoint will **copy the provided certificate into the default certdir** (overwriting or seeding) before starting NaviServer. This ensures the certificate is placed in the same writable volume that renewal tooling expects.
-
-### External Certificate Management (`certificatesdir`)
-
-When you explicitly provide a `certificatesdir` environment variable (or bind a host directory to it), this signals that the certificates are **managed externally** (outside the container) and should not be copied or generated automatically.
-
-Example compose snippet:
-
-```yaml
-services:
-  openacs:
-    environment:
-      certificatesdir: "/run/secrets/openacs_certs"
-      oacs_hostname: "example.com"
-      oacs_certificate: "/run/secrets/example.com.pem"
-    volumes:
-      - /path/on/host/certs:/run/secrets/openacs_certs
-```
-
-In this mode:
-
-* No certificate copying is performed.
-* The container expects the certificate to already exist and be readable at the path you specify.
-* Automated generation of self-signed certificates *is disabled* by default (you can opt in via `ns_allow_self_signed=1` if needed).
-* This mode is useful when certificates are managed externally (e.g., corporate PKI, Let’s Encrypt on the host, or a secrets manager).
-
-If the certificate is missing or unreadable in external mode (and self-signed generation is not permitted), the startup will fail to prevent unclear HTTPS behavior.
 
 ### Summary of Variables
 
@@ -213,9 +307,28 @@ If the certificate is missing or unreadable in external mode (and self-signed ge
 
 | Variable | Default | Description |
 |--------|--------|-------------|
-| `oacs_logroot` | `/var/www/openacs/log` | Log directory |
+| `logdir` | `/var/www/openacs/log` | Log directory |
 
-Ensure this path is writable and persistent if logs should survive restarts.
+`logdir` specifies the storage backend for logs.
+
+It can be either:
+
+* a named Docker volume (default)
+* a host directory (bind mount)
+
+In all cases, logs are written internally to:
+
+```
+/var/www/openacs/log
+```
+
+Example:
+
+```yaml
+volumes:
+  - ${logdir:-oacs_log}:/var/www/openacs/log
+```
+
 
 ---
 
