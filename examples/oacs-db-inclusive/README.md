@@ -191,9 +191,6 @@ ipv6address=2001:db8::123 httpport=80 httpsport=443 docker compose up -d
 
 ---
 
-
----
-
 ## Secrets
 
 By default, secrets are provided via a *named volume* mounted at `/run/secrets`.
