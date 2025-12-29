@@ -40,13 +40,63 @@ if [ -x /scripts/wait-for-postgres.sh ]; then
     /scripts/wait-for-postgres.sh
 fi
 
+
+# Handling configuration files (opt-in to use alternate name)
+#   If 'nsdconfig' is set, treat it as a relative path under
+#     <oacs_serverroot>/etc/<nsdconfig>
+#   If empty => default <hostname>-config.tcl
+#
+# If 'nsdconfig' is UNSET use
+#   /usr/local/ns/conf/openacs-config.tcl)
+
+if [ "${nsdconfig+x}" = x ]; then
+  cfg_name=$nsdconfig
+  if [ -z "$cfg_name" ]; then
+    cfg_name="${oacs_hostname}-config.tcl"
+  fi
+  nsdconfig="${oacs_serverroot}/etc/${cfg_name}"
+fi
+echo "NaviServer configuration file ${nsdconfig}"
+export nsdconfig
+
 # shellcheck disable=SC1091
 . /scripts/ns-certificates.sh
 
-oacs_certificate=$(
-  ns_setup_certificates "$oacs_serverroot" "$oacs_hostname" "${oacs_certificate-}"
+# If 'certificate' is UNSET, keep legacy behavior:
+#   use ${oacs_certificate-} as passed cert path (if any), otherwise default/generate.
+
+passed_cert=${oacs_certificate-}
+
+if [ "${certificate+x}" = x ]; then
+  # certificate variable is present => enable new/relative mode
+  cert_name=$certificate
+  if [ -z "$cert_name" ]; then
+    cert_name=${oacs_hostname}.pem
+  fi
+
+  new_path="${oacs_serverroot}/certificates/${cert_name}"
+  legacy_path="${oacs_serverroot}/etc/${cert_name}"
+
+  if [ -r "$new_path" ] && [ -s "$new_path" ]; then
+    passed_cert=$new_path
+  elif [ -r "$legacy_path" ] && [ -s "$legacy_path" ]; then
+    echo "WARNING: using legacy certificate path '$legacy_path'; prefer '$new_path'." >&2
+    passed_cert=$legacy_path
+  else
+    # Nothing readable found; pass the new path so internal mode can generate
+    # or external mode can fail hard (as configured).
+    passed_cert=$new_path
+  fi
+fi
+
+default_ns_certdir=${default_ns_certdir:-/var/lib/naviserver/certificates}
+
+# Call the shared helper, which return resolved cert path on stdout
+resolved_cert=$(
+  ns_setup_certificates "$default_ns_certdir" "$oacs_hostname" "${passed_cert-}"
 ) || return 1
 
+oacs_certificate=$resolved_cert
 export oacs_certificate
 
 CONTAINER_ALREADY_STARTED="/CONTAINER_ALREADY_STARTED_PLACEHOLDER"
