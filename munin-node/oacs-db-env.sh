@@ -21,9 +21,9 @@
 #    DB_NAME DB_HOST DB_PORT DB_USER DB_SOCKET_DIR
 #    DB_EFFECTIVE_HOST DB_EFFECTIVE_DESC
 #
-# * For TCP: DB_EFFECTIVE_HOST = DB_HOST → pg_isready -h postgres -p 5432 ...
+# * For TCP: DB_EFFECTIVE_HOST = DB_HOST -> pg_isready -h postgres -p 5432 ...
 # * For UNIX sockets: DB_EFFECTIVE_HOST = /var/run/postgresql
-#     libpq interprets that as “socket dir”
+#     libpq interprets that as "socket dir"
 #     -> pg_*  -h /var/run/postgresql -p 5432 ...
 
 

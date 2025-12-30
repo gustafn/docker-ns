@@ -1122,7 +1122,7 @@ ns_section ns/server/$server {
     # in the same format as "extraheaders" for the HTTP/HTTPS drivers.
     #
     # Example:
-    #   {X-Frame-Options SAMEORIGIN X-Content-Type-Options nosniff}
+    #   {x-frame-options SAMEORIGIN x-content-type-options nosniff}
     #
     # ns_param extraheaders {key value ...}
 }
@@ -1442,7 +1442,7 @@ ns_section ns/server/$server/module/nslog {
     # Reverse proxy handling.
     #------------------------------------------------------------------
     # When running behind a reverse proxy, enable detection of
-    # X-Forwarded-For / proxy headers so that the client IP is logged
+    # x-forwarded-for / proxy headers so that the client IP is logged
     # correctly. Deprecated, replaced by "ns/parameters/reversproxymode"
     # ns_param checkforproxy    $reverseproxymode  ;# default: false
 
