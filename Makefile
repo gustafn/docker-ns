@@ -22,17 +22,19 @@ ALPINE_ONLY_COMPONENTS = \
 	munin-node \
 	mail-relay
 
-.PHONY: all build buildx sync clean 
+.PHONY: all build buildx sync clean help
 #        $(addprefix build-,$(CORE_COMPONENTS) $(ALPINE_ONLY_COMPONENTS)) \
 #        $(addprefix buildx-,$(CORE_COMPONENTS) $(ALPINE_ONLY_COMPONENTS))
 
 all: build
 
 # ---- shared sync rules ----
-sync: openacs/scripts/oacs-db-env.sh munin-node/oacs-db-env.sh \
-      naviserver/get-naviserver-modules.sh \
-      naviserver-pg/get-naviserver-modules.sh \
-      naviserver-oracle/get-naviserver-modules.sh
+sync: openacs/scripts/oacs-db-env.sh \
+	munin-node/oacs-db-env.sh \
+	naviserver/get-naviserver-modules.sh \
+	naviserver-pg/get-naviserver-modules.sh \
+	naviserver-oracle/get-naviserver-modules.sh \
+	openacs/scripts/get-naviserver-modules.sh
 
 openacs/scripts/oacs-db-env.sh: scripts/oacs-db-env.sh
 	cp -p $< $@
@@ -41,7 +43,8 @@ munin-node/oacs-db-env.sh: scripts/oacs-db-env.sh
 NSMOD_TARGETS = \
   naviserver/get-naviserver-modules.sh \
   naviserver-pg/get-naviserver-modules.sh \
-  naviserver-oracle/get-naviserver-modules.sh
+  naviserver-oracle/get-naviserver-modules.sh \
+  openacs/scripts/get-naviserver-modules.sh
 
 $(NSMOD_TARGETS): scripts/get-naviserver-modules.sh
 	cp -p $< $@
@@ -97,3 +100,34 @@ clean:
 	  echo "==> $$c: clean"; \
 	  $(MAKE) -C $$c clean; \
 	done
+.PHONY: help
+
+help:
+	@printf "%s\n" "docker-ns Makefile targets"
+	@printf "%s\n" "========================="
+	@printf "\n%s\n" "Common:"
+	@printf "  %-28s %s\n" "make" "Build all images locally (no push)"
+	@printf "  %-28s %s\n" "make help" "Show this help"
+	@printf "\n%s\n" "Local builds (recommended when you changed files in this repo):"
+	@printf "  %-28s %s\n" "make build-naviserver" "Build NaviServer image locally"
+	@printf "  %-28s %s\n" "make build-openacs" "Build OpenACS image locally"
+	@printf "  %-28s %s\n" "make build-mail-relay" "Build mail-relay image locally"
+	@printf "  %-28s %s\n" "make build-munin-node" "Build munin-node image locally"
+	@printf "  %-28s %s\n" "make build-munin-master" "Build munin-master image locally"
+	@printf "\n%s\n" "Using -local tags:"
+	@printf "  %-28s %s\n" "make LOCAL_TAG=-local build-openacs" "Build as ...:latest-local (no push)"
+	@printf "  %-28s %s\n" "make LOCAL_TAG=-local" "Build all as ...:latest-local (no push)"
+	@printf "\n%s\n" "Multi-arch builds (buildx) – builds AND pushes to Docker Hub:"
+	@printf "  %-28s %s\n" "make buildx-openacs" "Multi-arch build + push OpenACS image"
+	@printf "  %-28s %s\n" "make buildx-TARGET" "Same tags as with: make build-TARGET"
+	@printf "\n%s\n" "Versioned builds (examples):"
+	@printf "  %-28s %s\n" "make VERSION_NS=5.0.3 RELEASE_TAG=5.0.3 build" "Local versioned build"
+	@printf "  %-28s %s\n" "make VERSION_NS=5.0.3 RELEASE_TAG=5.0.3 buildx-openacs" "Multi-arch versioned build + push"
+	@printf "\n%s\n" "Variables:"
+	@printf "  %-28s %s\n" "LOCAL_TAG=-local" "Append suffix to image tags (e.g. :latest-local)"
+	@printf "  %-28s %s\n" "RELEASE_TAG=<tag>" "Image tag to build (e.g. 5.0.3, latest)"
+	@printf "  %-28s %s\n" "VERSION_NS=<ver>" "NaviServer version (used by some images/builds)"
+	@printf "\n%s\n" "Notes:"
+	@printf "  %s\n" "- buildx targets require docker login + push rights to the Docker Hub repo."
+	@printf "  %s\n" "- If you modified files locally, prefer LOCAL_TAG=-local and reference that tag"
+	@printf "  %s\n" "  (e.g. gustafn/openacs:latest-local) in docker-compose."
