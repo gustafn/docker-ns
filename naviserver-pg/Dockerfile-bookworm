@@ -14,7 +14,7 @@ COPY get-naviserver-modules.sh /scripts
 
 ARG system_pkgs=""
 RUN  DEBIAN_FRONTEND=noninteractive apt-get -qq install -y libpq5 postgresql-client $system_pkgs  && dev_packages="git gcc make libpq-dev zlib1g-dev curl"  && DEBIAN_FRONTEND=noninteractive apt-get -qq install -y ${dev_packages} \
-   && bash /scripts/get-naviserver-modules.sh -m nsdbpg -i \
+   && sh /scripts/get-naviserver-modules.sh -m nsdbpg -i \
    &&  DEBIAN_FRONTEND=noninteractive apt-get -qq purge -y ${dev_packages}  && DEBIAN_FRONTEND=noninteractive apt-get -qq autoremove -y
 
 

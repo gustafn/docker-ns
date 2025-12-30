@@ -48,7 +48,7 @@ if [ "${modules_tar}" != "" ] ; then
     tar zxf ${modules_tar}
 
 else
-    mkdir modules && cd modules || exit 1
+    mkdir -p modules && cd modules || exit 1
     for module in ${modules}
     do
         git clone "https://github.com/naviserver-project/${module}"
