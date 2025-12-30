@@ -114,13 +114,24 @@ ns_setup_certificates() {
       fi
 
       if [ -n "$passed_cert" ] && [ "$passed_cert" != "$ns_default_cert" ]; then
-        ns_log "Certificate provided ('$passed_cert'), copying to standard location '$ns_default_cert'"
+        if [ ! -s "$ns_default_cert" ]; then
+          ns_log "Certificate provided ('$passed_cert'), installing into '$ns_default_cert' (managed cert missing)"
+          do_copy=1
+        elif [ "$passed_cert" -nt "$ns_default_cert" ]; then
+          ns_log "Certificate provided ('$passed_cert') is newer than '$ns_default_cert', updating managed cert"
+          do_copy=1
+        else
+          ns_log "Certificate provided ('$passed_cert') is not newer than '$ns_default_cert', keeping managed cert"
+          do_copy=0
+        fi
 
-        tmpcert=$(mktemp "${ns_certdir}/.${ns_hostname}.pem.XXXXXX") || return 1
-        cp -f "$passed_cert" "$tmpcert" || { rm -f "$tmpcert"; return 1; }
-        chown nsadmin:nsadmin "$tmpcert" 2>/dev/null || true
-        chmod 600 "$tmpcert" || { rm -f "$tmpcert"; return 1; }
-        mv -f "$tmpcert" "$ns_default_cert" || { rm -f "$tmpcert"; return 1; }
+        if [ "$do_copy" = 1 ]; then
+          tmpcert=$(mktemp "${ns_certdir}/.${ns_hostname}.pem.XXXXXX") || return 1
+          cp -f "$passed_cert" "$tmpcert" || { rm -f "$tmpcert"; return 1; }
+          chown nsadmin:nsadmin "$tmpcert" 2>/dev/null || true
+          chmod 600 "$tmpcert" || { rm -f "$tmpcert"; return 1; }
+          mv -f "$tmpcert" "$ns_default_cert" || { rm -f "$tmpcert"; return 1; }
+        fi
       fi
     fi
   fi
