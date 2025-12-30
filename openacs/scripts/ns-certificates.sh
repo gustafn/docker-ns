@@ -72,7 +72,16 @@ ns_setup_certificates() {
 
   ns_fail_hard_missing_explicit=${ns_fail_hard_missing_explicit:-1}
 
+  #
+  # Setup certificates directory with right permissions (when internal)
+  #
   mkdir -p "$ns_certdir" || return 1
+  if [ "$external_certs" -eq 0 ]; then
+    # Managed/internal cert store: ensure nsadmin can write.
+    # Best-effort only; do not fail on exotic filesystems / rootless.
+    chown nsadmin:nsadmin "$ns_certdir" 2>/dev/null || true
+    chmod 2770 "$ns_certdir" 2>/dev/null || chmod 0770 "$ns_certdir" 2>/dev/null || true
+  fi
 
   if [ "$external_certs" -eq 1 ]; then
     cert_source="external-certificatesdir"
