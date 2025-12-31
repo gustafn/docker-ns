@@ -56,7 +56,6 @@ $(NSMOD_TARGETS): scripts/get-naviserver-modules.sh
 define run_core
 	@set -e; \
 	for c in $(CORE_COMPONENTS); do \
-	  echo "==> $$c: $(1) (BASE=$(BASE))"; \
           printf '==> %b%s%b: $(1) (BASE=$(BASE))\n' "$(BOLD)" "$$c" "$(RESET)"; \
 	  $(MAKE) -C $$c $(1); \
 	done
