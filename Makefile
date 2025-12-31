@@ -22,6 +22,9 @@ ALPINE_ONLY_COMPONENTS = \
 	munin-node \
 	mail-relay
 
+BOLD  := \033[1m
+RESET := \033[0m
+
 .PHONY: all build buildx sync clean help
 #        $(addprefix build-,$(CORE_COMPONENTS) $(ALPINE_ONLY_COMPONENTS)) \
 #        $(addprefix buildx-,$(CORE_COMPONENTS) $(ALPINE_ONLY_COMPONENTS))
@@ -54,6 +57,7 @@ define run_core
 	@set -e; \
 	for c in $(CORE_COMPONENTS); do \
 	  echo "==> $$c: $(1) (BASE=$(BASE))"; \
+          printf '==> %b%s%b: $(1) (BASE=$(BASE))\n' "$(BOLD)" "$$c" "$(RESET)"; \
 	  $(MAKE) -C $$c $(1); \
 	done
 endef
@@ -61,7 +65,7 @@ endef
 define run_alpine_only
 	@set -e; \
 	for c in $(ALPINE_ONLY_COMPONENTS); do \
-	  echo "==> $$c: $(1) (BASE=alpine)"; \
+          printf '==> %b%s%b: $(1) (BASE=$(BASE))\n' "$(BOLD)" "$$c" "$(RESET)"; \
 	  $(MAKE) -C $$c $(1) BASE=alpine; \
 	done
 endef
@@ -78,21 +82,21 @@ buildx: sync
 # ---- per-component convenience ----
 build-%: sync
 	@if echo "$(ALPINE_ONLY_COMPONENTS)" | tr ' ' '\n' | grep -qx "$*"; then \
-	  echo "==> $*: build (BASE=alpine)"; \
-	  $(MAKE) -C $* build BASE=alpine; \
+	  BASE=alpine; \
 	else \
-	  echo "==> $*: build (BASE=$(BASE))"; \
-	  $(MAKE) -C $* build; \
-	fi
+	  BASE="$(BASE)"; \
+	fi; \
+	printf '==> %b%s%b: build (BASE=%s)\n' "$(BOLD)" "$*" "$(RESET)" "$$BASE"; \
+	$(MAKE) -C $* build
 
 buildx-%: sync
 	@if echo "$(ALPINE_ONLY_COMPONENTS)" | tr ' ' '\n' | grep -qx "$*"; then \
-	  echo "==> $*: buildx (BASE=alpine)"; \
-	  $(MAKE) -C $* buildx BASE=alpine; \
+	  BASE=alpine; \
 	else \
-	  echo "==> $*: buildx (BASE=$(BASE))"; \
-	  $(MAKE) -C $* buildx; \
-	fi
+	  BASE="$(BASE)"; \
+	fi; \
+        printf '==> %b%s%b: buildx (BASE=%s)\n' "$(BOLD)" "$*" "$(RESET)" "$$BASE"; \
+	$(MAKE) -C $* buildx BASE=alpine; \
 
 clean:
 	@set -e; \
