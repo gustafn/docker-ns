@@ -32,7 +32,10 @@ To enable ACME, uncomment the letsencrypt configuration section and configure:
 - key type / API
 - HTTP challenge reachability (`/.well-known/acme-challenge/…`)
 
-ACME state and certificates are stored in `/var/lib/naviserver/certificates`.
+When the `letsencrypt` module is configured and enabled, the OpenACS package `acs-admin` takes care about the automated certificate renewal. Make sure, that the server is also reachable via HTTP, which is required for the ACME protocol used by `letsencrypt`.
+
+ACME state and certificates are stored in `/var/lib/naviserver/certificates`. 
+
 
 ---
 
