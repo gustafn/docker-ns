@@ -24,6 +24,16 @@ This setup is designed to support:
 * production-like deployments with externalized state
 * clear separation between *binaries* and *site data*
 
+This example ships with a **sample letsencrypt configuration** (disabled by default).
+The OpenACS image already contains the `letsencrypt` NaviServer module.
+
+To enable ACME, uncomment the letsencrypt configuration section and configure:
+- domains (CN + SANs)
+- key type / API
+- HTTP challenge reachability (`/.well-known/acme-challenge/…`)
+
+ACME state and certificates are stored in `/var/lib/naviserver/certificates`.
+
 ---
 
 ## Core design principles
@@ -205,9 +215,46 @@ If `certificatesdir` is set to a host path, certificates are treated as
 **externally managed**. In that case, no automatic creation or renewal
 is assumed.
 
+#### Mitgration of the letsencrypt/ACME state from outside the container
+
+In case you were operating NaviServer with the `letsencrypt` module enabled, you might find the informaton useful how to import the ACME state into the `oacs-certificates' storage:
+
+1) Create a tar ball on the old host
+   
+   ```
+   ssh USER@OLDHOST 'cd /usr/local/ns/modules && tar czf - nsssl' > nsssl.tar.gz
+   ```
+
+2) Copy tar ball into the running `openacs` container
+   
+   ```
+   docker cp nsssl.tar.gz YOURNAME-openacs-1:/var/lib/naviserver/certificates/
+   ```
+
+4) Extract inside the container the tar file
+   
+   ```
+   docker exec -u root YOURNAME-openacs-1 sh -c '
+     set -e
+     cd /var/lib/naviserver/certificates
+     tar zxvf nsssl.tar.gz
+
+     # Optional safety: keep a copy if the target cert file exists
+     if [ -f OLDCERTIFICATE.pem ]; then
+       cp -p OLDCERTIFICATE.pem OLDCERTIFICATE.pem-backup
+     fi
+
+     # Move the extracted legacy state into place
+     mv -f nsssl/* .
+
+     # Ensure the letsencrypt module (nsadmin) can manage the directory and content
+     chown -R nsadmin:nsadmin .
+   '   
+   ```
+   
 ---
 
-### 7. Optional memory optimization
+## 7. Optional memory optimization
 
 This setup supports preloading Google tcmalloc:
 
