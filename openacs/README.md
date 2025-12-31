@@ -18,6 +18,11 @@ The image provides:
   
 The image is based on [`gustafn/naviserver-pg`](../naviserver-pg/README.md) and contains the Tcl packages and NaviServer modules as provided by this container.
 
+The OpenACS container image includes the NaviServer **letsencrypt** module.
+A sample (disabled) configuration snippet is shipped with the `openacs-org` example.
+Enable it by uncommenting the letsencrypt section and providing the required settings
+(API, key type, domains/SANs, and HTTP challenge reachability).
+
 Source repositories:
 - [NaviServer](https://github.com/naviserver-project)
 - [OpenACS](https://github.com/openacs)
