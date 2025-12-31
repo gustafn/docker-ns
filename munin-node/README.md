@@ -23,7 +23,31 @@ It is intended to be paired with a standard Munin master installation.
 * Automatic symlinking of plugins via `/etc/munin/plugins/`
 * Supports Docker-network monitoring setups
 * Simple volume mapping for Munin plugin state and logs
-* Configuration via environment variables and optional custom config files
+* Includes **NaviServer/OpenACS monitoring plugins**:
+
+  ```
+  naviserver_locks.busy
+  naviserver_locks.nr
+  naviserver_locks.wait
+  naviserver_logstats
+  naviserver_lsof
+  naviserver_memsize
+  naviserver_responsetime
+  naviserver_serverstats
+  naviserver_threadcpu
+  naviserver_threads
+  naviserver_users
+  naviserver_users24
+  naviserver_views
+  postgres_bgwriter
+  postgres_scans_
+  postgres_tuples_
+  ```
+* Built-in connectivity checks for:
+
+  * OpenACS (NaviServer) endpoint
+  * Munin master reachability (informational)
+* Fully configurable through environment variables and optional custom config files
 
 ---
 
