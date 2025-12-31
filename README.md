@@ -28,8 +28,8 @@ Source repositories:
 │
 ├── openacs/                 # OpenACS image (runtime + setup scripts)
 ├── naviserver/              # Base NaviServer image
-├── naviserver-pg/           # NaviServer with PostgreSQL client support
-├── naviserver-oracle/       # NaviServer with Oracle client support
+├── naviserver-pg/           # NaviServer image with PostgreSQL client support
+├── naviserver-oracle/       # NaviServer image with Oracle client support
 ├── munin-master/            # Munin master image
 ├── munin-node/              # Munin node image (OpenACS-aware)
 ├── mail-relay/              # Postfix-based mail relay
@@ -44,7 +44,7 @@ Source repositories:
 
 ## Docker images and tags
 
-Ready to use images are published under the `gustafn/*` namespace on Docker Hub ([https://hub.docker.com/repositories/gustafn](https://hub.docker.com/repositories/gustafn))
+These 7 ready-to-use images are published under the `gustafn/*` namespace on Docker Hub ([https://hub.docker.com/repositories/gustafn](https://hub.docker.com/repositories/gustafn)). Each of these images is provided as a mostly independent subdirectory with its own Makefile.
 
 ### Tagging policy
 
@@ -100,7 +100,9 @@ An **openacs.org-style deployment**:
 * Configuration, scripts, logs, and database externalized
 * Supports running multiple OpenACS / NaviServer versions in parallel
 
-This example is intended for advanced setups and testing scenarios.
+This example is mirrored after the [openacs.org site](https://openacs.org) and contains in addition of the `openacs` image a `mail-relay` for sending mails, a preconfigured munin monitoring infrastructure (`munin-node` and `munin-master`), and automated certificate renewal via the `letsencrypt` NaviServer module. The configuration contains 4 virtual servers serviced by the same NaviServer instance.
+
+This example is intended to provide a reference for advanced setups and testing scenarios.
 
 ---
 
