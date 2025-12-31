@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # SPDX-License-Identifier: MPL-2.0
 #
 # We require bash to be able to execute the "source" command.

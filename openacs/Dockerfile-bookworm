@@ -21,7 +21,7 @@ ARG oacs_serverroot=/var/www/openacs
 ARG system_pkgs=""
 
 RUN mkdir -p /scripts /docker-entrypoint-initdb.d \
-    && DEBIAN_FRONTEND=noninteractive apt-get -qq install -y git grep zip curl file catdoc jq libarchive-tools ${system_packages} \
+    && DEBIAN_FRONTEND=noninteractive apt-get -qq install -y git make grep zip curl file catdoc jq libarchive-tools ${system_packages} \
     && mkdir -p ${oacs_serverroot}/log \
     && mkdir -p ${oacs_serverroot}/certificates \
     && case "$base_image" in \
@@ -45,6 +45,6 @@ COPY install/openacs-plain-install.xml \
    install/openacs-xowf-install.xml ${oacs_serverroot}
 
 RUN /scripts/get-naviserver-modules.sh -m letsencrypt -i \
-   &&  DEBIAN_FRONTEND=noninteractive apt-get -qq purge -y git  && DEBIAN_FRONTEND=noninteractive apt-get -qq autoremove -y
+   &&  DEBIAN_FRONTEND=noninteractive apt-get -qq purge -y git make  && DEBIAN_FRONTEND=noninteractive apt-get -qq autoremove -y
 
 

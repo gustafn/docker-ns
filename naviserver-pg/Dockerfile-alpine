@@ -13,8 +13,7 @@ COPY get-naviserver-modules.sh /scripts
 
 
 ARG system_pkgs=""
-RUN  apk add --no-cache libpq $apk_pkgs
-        && dev_packages="git musl-dev gcc make zlib-dev libpq-dev curl bash"  && apk add ${dev_packages} \
+RUN  apk add --no-cache libpq $apk_pkgs  && dev_packages="git musl-dev gcc make zlib-dev libpq-dev curl bash"  && apk add ${dev_packages} \
    && sh /scripts/get-naviserver-modules.sh -m nsdbpg -i \
    && apk del ${dev_packages}
 

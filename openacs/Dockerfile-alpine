@@ -21,7 +21,7 @@ ARG oacs_serverroot=/var/www/openacs
 ARG system_pkgs=""
 
 RUN mkdir -p /scripts /docker-entrypoint-initdb.d \
-    && apk add git curl diffutils grep poppler-utils jq libarchive-tools ${system_pkgs} \
+    && apk add git make curl diffutils grep poppler-utils jq libarchive-tools ${system_pkgs} \
     && mkdir -p ${oacs_serverroot}/log \
     && mkdir -p ${oacs_serverroot}/certificates \
     && case "$base_image" in \
@@ -45,6 +45,6 @@ COPY install/openacs-plain-install.xml \
    install/openacs-xowf-install.xml ${oacs_serverroot}
 
 RUN /scripts/get-naviserver-modules.sh -m letsencrypt -i \
-   && apk del git
+   && apk del git make
 
 
