@@ -208,15 +208,10 @@ services:
       - /tmp/.s.PGSQL.${db_port:-5432}:/var/run/postgresql/.s.PGSQL.${db_port:-5432}
 
     healthcheck:
-      test: ["CMD-SHELL", "curl -s -H \"Host: $HOSTNAME\" -f http://localhost:${internal_loopbackport:-8888}/SYSTEM/success.tcl || exit 1"]
+      test: ["CMD-SHELL", "curl -s -H \"Host: $hostname\" -f http://localhost:${internal_loopbackport:-8888}/SYSTEM/success.tcl || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
-
-    secrets:
-      - psql_password
-      - cluster_secret
-      - parameter_secret
 
   # ------------------------------------------------------------------
   #  mail-relay  (Postfix outgoing mail relay)
@@ -304,7 +299,7 @@ services:
     networks:
       - oacs-net
 
- volumes:
+volumes:
    oacs_data:
    oacs_log:
    oacs_secrets:
