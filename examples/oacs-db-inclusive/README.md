@@ -269,7 +269,7 @@ This example documents only **stack-level** knobs.
 
 For the full list of OpenACS runtime environment variables (`oacs_*`), see:
 
-* `openacs/README.md` in this repository
+* [`openacs/README.md`](../openacs/README.md) in this repository
 
 ---
 

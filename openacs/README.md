@@ -129,7 +129,7 @@ this location.
 | `oacs_server` | `openacs` | Logical OpenACS server name |
 | `oacs_hostname` | `localhost` | Hostname used by OpenACS |
 | `oacs_serverroot` | `/var/www/openacs` | OpenACS server root directory |
-| `oacs_tag` | unset | Logical instance tag (useful for parallel setups) |
+| `oacs_tag` | `oacs-5-10` | Repository tag indicating the OpenACS version when source tree is inside the container|
 
 ---
 
@@ -359,7 +359,9 @@ The image supports:
 Typical patterns:
 
 * Bind-mount an existing `/var/www/openacs`
-* Provide an installation XML (e.g. `openacs-plain-install.xml`)
+* Provide an installation XML, by e.g. providing a bind mount
+  overloading `/var/www/openacs/install.xml` (evaluated when the
+  container is loaded the first time)
 * Allow the startup scripts to detect and act accordingly
 
 Details of the installation flow are implemented in:
