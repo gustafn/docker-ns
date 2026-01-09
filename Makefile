@@ -11,6 +11,12 @@ LOCAL_TAG ?=
 
 export BASE RELEASE_TAG VERSION_NS DOCKER_USERNAME DOCKER_PROGRESS PLATFORM SYSTEM_PKGS LOCAL_TAG
 
+VERSION_NS_NORM := $(if $(strip $(VERSION_NS)),$(VERSION_NS),default)
+LOCAL_TAG_NORM  := $(if $(strip $(LOCAL_TAG)),$(LOCAL_TAG),)
+
+STAMP_BUILD      := .built-$(BASE)-$(RELEASE_TAG)-$(VERSION_NS_NORM)$(LOCAL_TAG_NORM)
+STAMP_BUILDX_MAN := .builtx-manifest-$(BASE)-$(RELEASE_TAG)-$(VERSION_NS_NORM)
+
 CORE_COMPONENTS = \
 	naviserver \
 	naviserver-pg \
@@ -52,6 +58,39 @@ NSMOD_TARGETS = \
 $(NSMOD_TARGETS): scripts/get-naviserver-modules.sh
 	cp -p $< $@
 
+
+# ----------------------------------------------------------------------
+# Stamp dependency chain (core images)
+# ----------------------------------------------------------------------
+
+# naviserver has no base dependency
+naviserver/$(STAMP_BUILD): sync
+	$(MAKE) -C naviserver build
+
+naviserver/$(STAMP_BUILDX_MAN): sync
+	$(MAKE) -C naviserver buildx
+
+# naviserver-pg depends on naviserver
+naviserver-pg/$(STAMP_BUILD): naviserver/$(STAMP_BUILD) sync
+	$(MAKE) -C naviserver-pg build
+
+naviserver-pg/$(STAMP_BUILDX_MAN): naviserver/$(STAMP_BUILDX_MAN) sync
+	$(MAKE) -C naviserver-pg buildx
+
+# naviserver-oracle depends on naviserver
+naviserver-oracle/$(STAMP_BUILD): naviserver/$(STAMP_BUILD) sync
+	$(MAKE) -C naviserver-oracle build
+
+naviserver-oracle/$(STAMP_BUILDX_MAN): naviserver/$(STAMP_BUILDX_MAN) sync
+	$(MAKE) -C naviserver-oracle buildx
+
+# openacs depends on naviserver-pg
+openacs/$(STAMP_BUILD): naviserver-pg/$(STAMP_BUILD) sync
+	$(MAKE) -C openacs build
+
+openacs/$(STAMP_BUILDX_MAN): naviserver-pg/$(STAMP_BUILDX_MAN) sync
+	$(MAKE) -C openacs buildx
+
 # ---- loop helpers ----
 define run_core
 	@set -e; \
@@ -70,12 +109,10 @@ define run_alpine_only
 endef
 
 # ---- main targets ----
-build: sync
-	$(call run_core,build)
+build:  naviserver/$(STAMP_BUILD) naviserver-pg/$(STAMP_BUILD) naviserver-oracle/$(STAMP_BUILD) openacs/$(STAMP_BUILD)
 	$(call run_alpine_only,build)
 
-buildx: sync
-	$(call run_core,buildx)
+buildx: naviserver/$(STAMP_BUILDX_MAN) naviserver-pg/$(STAMP_BUILDX_MAN) naviserver-oracle/$(STAMP_BUILDX_MAN) openacs/$(STAMP_BUILDX_MAN)
 	$(call run_alpine_only,buildx)
 
 # ---- per-component convenience ----
@@ -86,7 +123,7 @@ build-%: sync
 	  BASE="$(BASE)"; \
 	fi; \
 	printf '==> %b%s%b: build (BASE=%s)\n' "$(BOLD)" "$*" "$(RESET)" "$$BASE"; \
-	$(MAKE) -C $* build
+	$(MAKE) -C $* build BASE="$$BASE"
 
 buildx-%: sync
 	@if echo "$(ALPINE_ONLY_COMPONENTS)" | tr ' ' '\n' | grep -qx "$*"; then \
@@ -94,8 +131,8 @@ buildx-%: sync
 	else \
 	  BASE="$(BASE)"; \
 	fi; \
-        printf '==> %b%s%b: buildx (BASE=%s)\n' "$(BOLD)" "$*" "$(RESET)" "$$BASE"; \
-	$(MAKE) -C $* buildx BASE=alpine; \
+	printf '==> %b%s%b: buildx (BASE=%s)\n' "$(BOLD)" "$*" "$(RESET)" "$$BASE"; \
+	$(MAKE) -C $* buildx BASE="$$BASE"
 
 clean:
 	@set -e; \
@@ -103,7 +140,9 @@ clean:
 	  echo "==> $$c: clean"; \
 	  $(MAKE) -C $$c clean; \
 	done
-.PHONY: help
+
+rebuild: clean build
+rebuildx: clean buildx
 
 help:
 	@printf "%s\n" "docker-ns Makefile targets"
@@ -134,3 +173,6 @@ help:
 	@printf "  %s\n" "- buildx targets require docker login + push rights to the Docker Hub repo."
 	@printf "  %s\n" "- If you modified files locally, prefer LOCAL_TAG=-local and reference that tag"
 	@printf "  %s\n" "  (e.g. gustafn/openacs:latest-local) in docker-compose."
+
+
+.PHONY: help rebuild
