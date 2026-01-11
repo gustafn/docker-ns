@@ -1,17 +1,18 @@
 # SPDX-License-Identifier: MPL-2.0
 IMAGE_NAME ?= naviserver-oracle
+SYSTEM_PKGS ?=
 
 DEFAULT_BASE ?= trixie
 BASE ?= $(DEFAULT_BASE)
 RELEASE_TAG ?= latest
 LOCAL_TAG ?=
 ALIAS_TAG ?=
+BASE_STAMP ?=
 
 VERSION_NS ?= GIT
 DOCKER_USERNAME ?= gustafn
 DOCKER_PROGRESS ?= plain
 PLATFORM ?= linux/amd64,linux/arm64
-SYSTEM_PKGS ?=
 
 IMAGE = $(DOCKER_USERNAME)/$(IMAGE_NAME):$(RELEASE_TAG)-$(BASE)$(LOCAL_TAG)
 DOCKERFILE = Dockerfile-$(BASE)
@@ -43,6 +44,7 @@ PLATFORM_ARM64 ?= linux/arm64
 # Internal per-arch tags (used only to assemble the multi-arch manifest)
 IMAGE_AMD64 = $(IMAGE)-amd64
 IMAGE_ARM64 = $(IMAGE)-arm64
+REFRESH_PLATFORMS ?= $(PLATFORM_AMD64)
 
 # Optional: force no-cache per platform (e.g., NOCACHE_AMD64=1)
 NOCACHE_AMD64 ?= 0
@@ -54,6 +56,7 @@ BUILDX_NOCACHE_ARM64 := $(if $(filter 1,$(NOCACHE_ARM64)),--no-cache,)
 STAMP_BUILDX_AMD64 := .builtx-amd64-$(BASE)-$(RELEASE_TAG)-$(VERSION_NS_NORM)-nc$(NOCACHE_AMD64)
 STAMP_BUILDX_ARM64 := .builtx-arm64-$(BASE)-$(RELEASE_TAG)-$(VERSION_NS_NORM)-nc$(NOCACHE_ARM64)
 STAMP_BUILDX_MANIFEST := .builtx-manifest-$(BASE)-$(RELEASE_TAG)-$(VERSION_NS_NORM)
+STAMP_BUILDX_LEGACY := .builtx-$(BASE)-$(RELEASE_TAG)-$(VERSION_NS_NORM)
 STAMP := .built-$(BASE)-$(RELEASE_TAG)-$(VERSION_NS_NORM)$(LOCAL_TAG_NORM)
 
 
@@ -64,8 +67,18 @@ INGREDIENTS = \
   $(wildcard initdb/*) \
   $(wildcard install/*) \
   $(wildcard *.sh) \
+  $(BASE_STAMP)
 
 .PHONY: build buildx clean
+
+define refresh_tag
+	@echo "==> Refresh local image $(1) from registry ($(REFRESH_PLATFORMS))"
+	@docker rmi -f $(1) >/dev/null 2>&1 || true
+	@set -e; for p in $(REFRESH_PLATFORMS); do \
+	  echo "    pulling $$p ..."; \
+	  docker pull --platform $$p $(1) >/dev/null; \
+	done
+endef
 
 # ----------------------------------------------------------------------
 # Local build (no push)
@@ -91,9 +104,6 @@ ifneq ($(strip $(ALIAS_TAG)),)
 endif
 	touch $@
 
-# ----------------------------------------------------------------------
-# Multi-arch build & push using buildx
-# ----------------------------------------------------------------------
 # ----------------------------------------------------------------------
 # Multi-arch build & push using buildx (per-arch + manifest assembly)
 # ----------------------------------------------------------------------
@@ -137,15 +147,13 @@ $(STAMP_BUILDX_MANIFEST): $(STAMP_BUILDX_AMD64) $(STAMP_BUILDX_ARM64)
 	  echo "ERROR: refusing to push with LOCAL_TAG=$(LOCAL_TAG)"; exit 2; \
 	fi
 	# Assemble final multi-arch tag from per-arch tags
-	docker buildx imagetools create \
-	  -t $(IMAGE) \
-	  $(IMAGE_AMD64) \
-	  $(IMAGE_ARM64)
+	docker buildx imagetools create -t $(IMAGE) $(IMAGE_AMD64) $(IMAGE_ARM64)
 ifneq ($(strip $(ALIAS_TAG)),)
-	docker buildx imagetools create \
-	  -t $(IMAGE_ALIAS) \
-	  $(IMAGE_AMD64) \
-	  $(IMAGE_ARM64)
+	docker buildx imagetools create -t $(IMAGE_ALIAS) $(IMAGE_AMD64) $(IMAGE_ARM64)
+endif
+	$(call refresh_tag,$(IMAGE))
+ifneq ($(strip $(ALIAS_TAG)),)
+	$(call refresh_tag,$(IMAGE_ALIAS))
 endif
 	touch $@
 
@@ -159,6 +167,14 @@ buildx-force:
 
 clean:
 	rm -f $(STAMP) $(STAMP).pushed $(STAMP).pushed-* \
-	      $(STAMP_BUILDX_AMD64) $(STAMP_BUILDX_ARM64) $(STAMP_BUILDX_MANIFEST)
+	      .builtx-amd64-$(BASE)-$(RELEASE_TAG)-$(VERSION_NS_NORM)-nc* \
+	      .builtx-arm64-$(BASE)-$(RELEASE_TAG)-$(VERSION_NS_NORM)-nc* \
+	      $(STAMP_BUILDX_MANIFEST) \
+	      .builtx-$(BASE)-$(RELEASE_TAG)-$(VERSION_NS_NORM)
 
+#
+# Local Variables:
+# mode: makefile
+# End:
+#
 

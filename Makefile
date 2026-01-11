@@ -72,24 +72,24 @@ naviserver/$(STAMP_BUILDX_MAN): sync
 
 # naviserver-pg depends on naviserver
 naviserver-pg/$(STAMP_BUILD): naviserver/$(STAMP_BUILD) sync
-	$(MAKE) -C naviserver-pg build
+	$(MAKE) -C naviserver-pg build BASE_STAMP=../naviserver/$(STAMP_BUILD)
 
 naviserver-pg/$(STAMP_BUILDX_MAN): naviserver/$(STAMP_BUILDX_MAN) sync
-	$(MAKE) -C naviserver-pg buildx
+	$(MAKE) -C naviserver-pg buildx BASE_STAMP=../naviserver/$(STAMP_BUILDX_MAN)
 
 # naviserver-oracle depends on naviserver
 naviserver-oracle/$(STAMP_BUILD): naviserver/$(STAMP_BUILD) sync
-	$(MAKE) -C naviserver-oracle build
+	$(MAKE) -C naviserver-oracle build STAMP=../naviserver/$(STAMP_BUILD)
 
 naviserver-oracle/$(STAMP_BUILDX_MAN): naviserver/$(STAMP_BUILDX_MAN) sync
-	$(MAKE) -C naviserver-oracle buildx
+	$(MAKE) -C naviserver-oracle buildx BASE_STAMP=../naviserver/$(STAMP_BUILDX_MAN)
 
 # openacs depends on naviserver-pg
 openacs/$(STAMP_BUILD): naviserver-pg/$(STAMP_BUILD) sync
-	$(MAKE) -C openacs build
+	$(MAKE) -C openacs build BASE_STAMP=../naviserver-pg/$(STAMP_BUILD)
 
 openacs/$(STAMP_BUILDX_MAN): naviserver-pg/$(STAMP_BUILDX_MAN) sync
-	$(MAKE) -C openacs buildx
+	$(MAKE) -C openacs buildx BASE_STAMP=../naviserver-pg/$(STAMP_BUILDX_MAN)
 
 # ---- loop helpers ----
 define run_core
@@ -103,7 +103,7 @@ endef
 define run_alpine_only
 	@set -e; \
 	for c in $(ALPINE_ONLY_COMPONENTS); do \
-          printf '==> %b%s%b: $(1) (BASE=$(BASE))\n' "$(BOLD)" "$$c" "$(RESET)"; \
+          printf '==> %b%s%b: $(1) (BASE=alpine)\n' "$(BOLD)" "$$c" "$(RESET)"; \
 	  $(MAKE) -C $$c $(1) BASE=alpine; \
 	done
 endef
@@ -162,6 +162,7 @@ help:
 	@printf "\n%s\n" "Multi-arch builds (buildx) – builds AND pushes to Docker Hub:"
 	@printf "  %-28s %s\n" "make buildx-openacs" "Multi-arch build + push OpenACS image"
 	@printf "  %-28s %s\n" "make buildx-TARGET" "Same tags as with: make build-TARGET"
+	@printf "  %-28s %s\n" "make buildx NOCACHE_AMD64=1 NOCACHE_ARM64=1" "Multi-arch Build with no cache"
 	@printf "\n%s\n" "Versioned builds (examples):"
 	@printf "  %-28s %s\n" "make VERSION_NS=5.0.3 RELEASE_TAG=5.0.3 build" "Local versioned build"
 	@printf "  %-28s %s\n" "make VERSION_NS=5.0.3 RELEASE_TAG=5.0.3 buildx-openacs" "Multi-arch versioned build + push"
