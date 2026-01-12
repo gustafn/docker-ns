@@ -230,9 +230,9 @@ docker run --rm -v oacs_secrets:/run/secrets alpine sh -c 'umask 077; echo "chan
 The default image setup is intentionally minimal and includes only the
 binary components required to run the OpenACS regression test suite.
 Currently, this consists of the packages **`imagemagick`** and
-**`poppler-utils`**.
+**`poppler-utils`**, but it can be extended by the environment variable `system_pkgs`.
 
-Depending on your use case, you may want to install additional system
+Depending on your use case, you may want to add further system
 packages. Common examples include:
 
 * **`graphviz`** – enables generation of call graphs and class graphs in
