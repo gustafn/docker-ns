@@ -224,6 +224,29 @@ docker run --rm -v oacs_secrets:/run/secrets alpine sh -c 'umask 077; echo "chan
 
 ## Tailoring and common adaptations
 
+
+### Adding additional system packages
+
+The default image setup is intentionally minimal and includes only the
+binary components required to run the OpenACS regression test suite.
+Currently, this consists of the packages **`imagemagick`** and
+**`poppler-utils`**.
+
+Depending on your use case, you may want to install additional system
+packages. Common examples include:
+
+* **`graphviz`** – enables generation of call graphs and class graphs in
+  the API documentation, or workflow graphs for `xowf` etc.
+* **`procps`** – provides the `uptime` command, which is used by
+  `/acs-admin/monitor`.
+
+System packages are installed using **`apt-get`** on Debian-based images
+and **`apk add`** on Alpine-based images. While many package names are
+identical across Debian and Alpine, some differ, so consult the
+distribution-specific package index if a package cannot be found under
+the same name.
+
+
 ### Use a custom `openacs-config.tcl`
 
 Bind mount your config into the container:
