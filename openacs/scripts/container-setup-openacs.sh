@@ -267,7 +267,7 @@ if [ ! -e $CONTAINER_ALREADY_STARTED ] ; then
         # Make nsstats available under "/admin/nsstats" on every subsite.
         #
         if [ ! -e  "${oacs_serverroot}"/packages/acs-subsite/www/admin/nsstats.tcl ] ; then
-            cp /usr/local/ns/pages/nsstats.* "${oacs_serverroot}"/packages/acs-subsite/www/admin
+            ln -s /usr/local/ns/pages/nsstats.* "${oacs_serverroot}"/packages/acs-subsite/www/admin
         fi
     else
         echo "====== Packages are already installed, use existing (external?) installation"
