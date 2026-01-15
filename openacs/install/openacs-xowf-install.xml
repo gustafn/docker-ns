@@ -13,8 +13,9 @@
     <set-theme theme="openacs_bootstrap5" subsite="/" />
 
     <install package="xowf"/>
-    <!-- <mount package="xowf" mount-point="/xowf" instance-name="xowf"/> -->
 
+    <install package="tsearch2-driver"/>
+    <mount package="search" mount-point="/search" instance-name="Search"/>
 
 <!-- We could mount automatically additional packages; some packages need to be mounted, before configuration option can be added
     <mount package="..." mount-point="..." instance-name="..."/>
