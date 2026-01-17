@@ -3,7 +3,7 @@
 IMAGE_NAME    = munin-master
 
 DEFAULT_BASE ?= alpine
-BASE ?= $(DEFAULT_BASE)   # we only support alpine here
+BASE ?= $(DEFAULT_BASE)
 
 RELEASE_TAG     ?= latest
 DOCKER_USERNAME ?= gustafn
