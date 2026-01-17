@@ -3,7 +3,7 @@
 IMAGE_NAME    = mail-relay
 
 DEFAULT_BASE ?= alpine
-BASE ?= $(DEFAULT_BASE)   # we only support alpine here
+BASE ?= $(DEFAULT_BASE)
 
 RELEASE_TAG     ?= latest
 DOCKER_USERNAME ?= gustafn
@@ -21,6 +21,7 @@ INGREDIENTS = \
   $(wildcard *.template)
 
 STAMP := .built-$(BASE)-$(RELEASE_TAG)$(LOCAL_TAG)
+STAMPX := $(STAMP).pushed
 
 # ----------------------------------------------------------------------
 # Local build (no push)
@@ -36,8 +37,8 @@ $(STAMP): $(INGREDIENTS)
 # ----------------------------------------------------------------------
 # Multi-arch build & push using buildx
 # ----------------------------------------------------------------------
-buildx: $(STAMP).pushed
-$(STAMP).pushed: $(STAMP)
+buildx: $(STAMPX)
+$(STAMPX): $(STAMP)
 	docker buildx build --push --pull \
 	  --platform $(PLATFORM) \
 	  --build-arg "RELEASE_TAG=$(RELEASE_TAG)" \
@@ -46,6 +47,6 @@ $(STAMP).pushed: $(STAMP)
 	touch $@
 
 clean:
-	rm -f $(STAMP)
+	rm -f $(STAMP) $(STAMPX)
 
 .PHONY: build buildx clean
