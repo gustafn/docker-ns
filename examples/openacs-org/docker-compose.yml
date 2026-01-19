@@ -264,10 +264,13 @@ services:
 
     volumes:
       - ${logdir}/munin-node:/var/log/munin
-      - ${secretsdir:-oacs_secrets}:/run/secrets
       - ${logdir}/munin-node-run:/var/run/munin
+      # Place, where to install munin.tcl (must be writable)
+      - ${hostroot}/www/SYSTEM:/oacs-system:rw
       # optional: for PostgreSQL plugins via unix socket
       - /tmp/.s.PGSQL.${db_port:-5432}:/var/run/postgresql/.s.PGSQL.${db_port:-5432}
+      # optional: secrets (needed for PostgreSQL connections
+      - ${secretsdir:-oacs_secrets}:/run/secrets
 
 
 

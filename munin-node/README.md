@@ -166,8 +166,10 @@ services:
       - MUNIN_ALLOW=172.16.0.0/12
 
     volumes:
-      - /var/www/openacs.org:/var/www/openacs.org:ro
-      - ${logdir}/munin-node:/var/log
+      - ${logdir}/munin-node:/var/log/munin
+      - ${logdir}/munin-node-run:/var/run/munin
+      # Place, where to install munin.tcl (must be writable)
+      #- ${hostroot}/www/SYSTEM:/oacs-system:rw
 ```
 
 A Munin master can then add:

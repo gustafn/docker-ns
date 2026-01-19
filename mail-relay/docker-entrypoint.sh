@@ -31,6 +31,7 @@ if command -v rsyslogd >/dev/null 2>&1; then
     rsyslogd
 fi
 
+echo "$(date '+%Y-%m-%d %H:%M:%S%z') mail-reley: starting postfix ..."
 # Run Postfix in the foreground so Docker/Portainer can track health
 exec postfix start-fg
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: MPL-2.0
 
-echo "-- container-setup-openacs.sh called --"
+echo "$(date '+%Y-%m-%d %H:%M:%S%z') -- container-setup-openacs.sh called --"
 
 : "${base_image:?}"
 
@@ -358,7 +358,7 @@ ls -ltr /scripts/
     echo "LOGDIR ${LOGDIR}"
     ls -ld "${LOGDIR}"
 
-echo "-- container-setup-openacs.sh finished --"
+echo "$(date '+%Y-%m-%d %H:%M:%S%z') -- container-setup-openacs.sh finished --"
 
 # NaviServer container:
 #    debian: basic debugging support

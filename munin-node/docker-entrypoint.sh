@@ -21,6 +21,8 @@ NS_PLUGIN_CONF_TEMPLATE="${NS_PLUGIN_CONF_TEMPLATE:-/etc/munin/naviserver-plugin
 
 export MUNIN_HOSTNAME MUNIN_ALLOW_CIDR NS_SERVER_NAME NS_ADDRESS NS_PORT NS_URL_PATH
 
+echo "$(date '+%Y-%m-%d %H:%M:%S%z') munin-node: starting..."
+
 # ----------------------------------------------------------------------
 # Generate munin-node.conf from template if none is provided by bind-mount
 # ----------------------------------------------------------------------
@@ -207,6 +209,6 @@ check_host "$MUNIN_MASTER_HOST"
 # We are not connecting to the node via port 80, but use just the generated files.
 #check_tcp  "$MUNIN_MASTER_HOST" "$MUNIN_MASTER_PORT" "munin master"
 
-echo "munin-node: connectivity checks done."
+echo "$(date '+%Y-%m-%d %H:%M:%S%z') munin-node: connectivity checks done."
 
 exec "$@"

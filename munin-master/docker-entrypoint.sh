@@ -19,6 +19,7 @@ set -e
 export MUNIN_DB_DIR MUNIN_HTML_DIR MUNIN_LOG_DIR MUNIN_RUN_DIR MUNIN_TPL_DIR
 export MUNIN_HOSTNAME MUNIN_NODE_ADDRESS
 
+echo "$(date '+%Y-%m-%d %H:%M:%S%z') munin-master: starting..."
 
 # Generate /etc/munin/munin.conf from template unless user bind-mounts their own
 if [ ! -f /etc/munin/munin.conf ]; then
@@ -98,5 +99,5 @@ chmod 600 /etc/crontabs/root
 echo "munin-master: running initial munin-cron..."
 #su -s /bin/sh munin -c /usr/bin/munin-cron || true
 
-echo "munin-master: starting crond..."
+echo "$(date '+%Y-%m-%d %H:%M:%S%z') munin-master: starting crond..."
 exec crond -f -l 8 -L /var/log/cron.log -c /etc/crontabs
