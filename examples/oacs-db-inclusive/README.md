@@ -42,9 +42,16 @@ Connect to the Database to Run SQL Commands
 
 When installing the system with `oacs-5-10` as database name (default) and `openacs` as database user (default) then
 
-- Open a shell to the postgres container (or use docker run ... or docker exec ...)
+- Open a shell to the postgres container (or use docker run ..., or
+  docker exec ..., or from portainer shell)
 - `psql --username openacs --dbname oacs-5-10`
 
+Optional: install portainer and listen on your local port 9443
+(portainer eases docker container mamagement via web-based GUI)
+
+```sh
+docker run -d -p 9443:9443 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:lts
+```
 
 ---
 
