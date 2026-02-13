@@ -132,7 +132,7 @@ services:
 
     ports:
       - ${ipaddress:-127.0.0.1}:${httpport:-}:8080
-      - ${ipaddress:-127.0.0.1}:${httpsport:-}:8443
+      #- ${ipaddress:-127.0.0.1}:${httpsport:-}:8443
 
     environment:
       - TZ=${TZ:-Europe/Vienna}
@@ -140,7 +140,7 @@ services:
 
       # Internal container ports
       - nsd_httpport=8080
-      - nsd_httpsport=8443
+      #- nsd_httpsport=8443
 
       # NaviServer layout
       - nsd_home=${home:-/usr/local/ns}

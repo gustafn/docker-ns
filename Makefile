@@ -20,8 +20,18 @@ STAMP_BUILDX_MAN := .builtx-manifest-$(BASE)-$(RELEASE_TAG)-$(VERSION_NS_NORM)
 CORE_COMPONENTS = \
 	naviserver \
 	naviserver-pg \
-	naviserver-oracle \
 	openacs
+
+# Currently, there is a problem with
+#     naviserver-oracle
+# Downloaded Oracle instantclient-basiclite-linux-arm64.zip size  -rw-r--r-- 1 root root 7073 Feb 11 07:44 instantclient-basiclite.zip
+# Archive:  instantclient-basiclite.zip
+# End-of-central-directory signature not found.  Either this file is not
+# a zipfile, or it constitutes one disk of a multi-part archive.  In the
+# latter case the central directory and zipfile comment will be found on
+# the last disk(s) of this archive.
+# unzip:  cannot find zipfile directory in one of instantclient-basiclite.zip or
+# instantclient-basiclite.zip.zip, and cannot find instantclient-basiclite.zip.ZIP, period. 
 
 ALPINE_ONLY_COMPONENTS = \
 	munin-master \
@@ -109,10 +119,12 @@ define run_alpine_only
 endef
 
 # ---- main targets ----
-build:  naviserver/$(STAMP_BUILD) naviserver-pg/$(STAMP_BUILD) naviserver-oracle/$(STAMP_BUILD) openacs/$(STAMP_BUILD)
+#build:  naviserver/$(STAMP_BUILD) naviserver-pg/$(STAMP_BUILD) naviserver-oracle/$(STAMP_BUILD) openacs/$(STAMP_BUILD)
+build:  naviserver/$(STAMP_BUILD) naviserver-pg/$(STAMP_BUILD) openacs/$(STAMP_BUILD)
 	$(call run_alpine_only,build)
 
-buildx: naviserver/$(STAMP_BUILDX_MAN) naviserver-pg/$(STAMP_BUILDX_MAN) naviserver-oracle/$(STAMP_BUILDX_MAN) openacs/$(STAMP_BUILDX_MAN)
+#buildx: naviserver/$(STAMP_BUILDX_MAN) naviserver-pg/$(STAMP_BUILDX_MAN) naviserver-oracle/$(STAMP_BUILDX_MAN) openacs/$(STAMP_BUILDX_MAN)
+buildx: naviserver/$(STAMP_BUILDX_MAN) naviserver-pg/$(STAMP_BUILDX_MAN) openacs/$(STAMP_BUILDX_MAN)
 	$(call run_alpine_only,buildx)
 
 # ---- per-component convenience ----
