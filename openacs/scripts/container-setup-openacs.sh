@@ -1,5 +1,13 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # SPDX-License-Identifier: MPL-2.0
+
+set -eu
+set -o pipefail 2>/dev/null || true
+
+fatal() {
+    echo "ERROR: $*" >&2
+    return 1 2>/dev/null || exit 1
+}
 
 echo "$(date '+%Y-%m-%d %H:%M:%S%z') -- container-setup-openacs.sh called --"
 
@@ -100,26 +108,35 @@ oacs_certificate=$resolved_cert
 export oacs_certificate
 
 CONTAINER_ALREADY_STARTED="/CONTAINER_ALREADY_STARTED_PLACEHOLDER"
-if [ ! -e $CONTAINER_ALREADY_STARTED ] ; then
-    touch $CONTAINER_ALREADY_STARTED
+if [ ! -e "$CONTAINER_ALREADY_STARTED" ] ; then
+    touch "$CONTAINER_ALREADY_STARTED"
     echo "-- First container startup --"
 
     # shellcheck disable=SC2086
-    if [ $alpine = "1" ] ; then
-        apk add --no-cache shadow shadow-uidmap ${system_pkgs:-}
+    if [ "$alpine" = "1" ] ; then
+        apk add --no-cache shadow shadow-uidmap ${system_pkgs:-} || fatal "apk add failed"
         # apk add lldb
-    elif [ $debian = "1" ] ; then
-        echo "... installing system_pkgs ' $system_pkgs' ..."
-        if DEBIAN_FRONTEND=noninteractive DEBCONF_TERSE=true \
-                          apt-get -y -qq install $system_pkgs \
-                          -o Dpkg::Use-Pty=0 \
-                          -o DPkg::Progress-Fancy=0 \
-                          > /dev/null
-        then
-            echo "... installed system_pkgs ' $system_pkgs' DONE"
-        else
-            echo "ERROR: installing system_pkgs failed" >&2
-            exit 1
+
+    elif [ "$debian" = "1" ] ; then
+        echo "... refreshing apt metadata ..."
+        DEBIAN_FRONTEND=noninteractive DEBCONF_TERSE=true \
+                       apt-get update > /dev/null || fatal "apt-get update failed"
+
+        echo "... upgrading installed packages ..."
+        DEBIAN_FRONTEND=noninteractive DEBCONF_TERSE=true \
+                       apt-get -y -qq upgrade \
+                       -o Dpkg::Use-Pty=0 \
+                       -o DPkg::Progress-Fancy=0 \
+                       > /dev/null || fatal "apt-get upgrade failed"
+
+        if [ -n "${system_pkgs:-}" ]; then
+            echo "... installing system_pkgs ' $system_pkgs' ..."
+            DEBIAN_FRONTEND=noninteractive DEBCONF_TERSE=true \
+                           apt-get -y -qq install $system_pkgs \
+                           -o Dpkg::Use-Pty=0 \
+                           -o DPkg::Progress-Fancy=0 \
+                           > /dev/null || fatal "installing system_pkgs failed"
+            echo "... installed system_pkgs '$system_pkgs' DONE"
         fi
     fi
 
@@ -206,17 +223,17 @@ if [ ! -e $CONTAINER_ALREADY_STARTED ] ; then
     # version of the source code (which might be mounted via
     # "volumes".
     #
-    cd  "${oacs_serverroot}" || exit 1
+    cd "${oacs_serverroot}" || fatal "cannot cd to ${oacs_serverroot}"
+
     if [ ! -d "packages" ] ; then
         echo "====== we have no OpenACS packages, install from CVS"
         ls "${oacs_serverroot}"
-        #echo "================================= exit"
-        #exit
 
-        if [ $alpine = "1" ] ; then
-            apk add cvs
-        elif [ $debian = "1" ] ; then
-            DEBIAN_FRONTEND=noninteractive apt-get -qq install -y cvs
+        if [ "$alpine" = "1" ] ; then
+            apk add cvs || fatal "apk add cvs failed"
+        elif [ "$debian" = "1" ] ; then
+            DEBIAN_FRONTEND=noninteractive apt-get -qq install -y cvs \
+                || fatal "apt-get install cvs failed"
         fi
 
         cvs -d:pserver:anonymous@cvs.openacs.org:/cvsroot -Q checkout -r "${oacs_core_tag}" acs-core
@@ -239,7 +256,8 @@ if [ ! -e $CONTAINER_ALREADY_STARTED ] ; then
         # Get more packages
         #
         echo "====== Check out application packages from CVS...."
-        cd "${oacs_serverroot}/packages" || exit 1
+        cd "${oacs_serverroot}/packages" || fatal "cannot cd to ${oacs_serverroot}/packages"
+
         cvs -d:pserver:anonymous@cvs.openacs.org:/cvsroot -Q checkout -r "${oacs_packages_tag}" xotcl-all
         cvs -d:pserver:anonymous@cvs.openacs.org:/cvsroot -Q checkout -r "${oacs_packages_tag}" \
             acs-developer-support \
@@ -349,6 +367,8 @@ EOF
 done
 
 /usr/local/ns/bin/tclsh /scripts/docker-setup.tcl /scripts/docker.config
+echo "docker network setup DONE"
+
 ls -ltr /scripts/
 
     LOGDIR="${oacs_logdir:-${oacs_serverroot}/log}"
