@@ -128,11 +128,17 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
-    command: >
-      /bin/sh -c "
-         . /scripts/container-setup-openacs.sh \\
-         && /usr/local/ns/bin/nsd -i -t $${nsdconfig:-/usr/local/ns/conf/openacs-config.tcl} -u nsadmin -g nsadmin
-      "
+    command:
+      - /bin/sh
+      - -c
+      - |
+        if . /scripts/container-setup-openacs.sh; then
+          exec /usr/local/ns/bin/nsd -i -t ${nsdconfig:-/usr/local/ns/conf/openacs-config.tcl} -u nsadmin -g nsadmin
+        else
+          rc=$$?
+          echo "ERROR: container setup failed with status $$rc" >&2
+          sleep infinity
+        fi
 
     networks:
       - oacs-net
