@@ -49,8 +49,9 @@ RUN  DEBIAN_FRONTEND=noninteractive apt-get -qq update  && DEBIAN_FRONTEND=nonin
     &&  DEBIAN_FRONTEND=noninteractive apt-get -qq purge -y ${dev_packages} gcc make libpq-dev autoconf automake m4 patch perl libexpat1  && DEBIAN_FRONTEND=noninteractive apt-get -qq autoremove -y \
     && rm -rf /usr/local/src
 
-# The following script is necessary, when later extra modules are
-# loaded. The used script above "install-ns" does not need it.
+# Scripts:
+#  - get-naviserver-modules.sh is necessary, when later extra modules are loaded.
+#  - ns-certificates.sh is for consistent setup of self-signed certificates
 
-COPY get-naviserver-modules.sh /scripts
+COPY --chmod=755 ns-certificates.sh get-naviserver-modules.sh /scripts/
 

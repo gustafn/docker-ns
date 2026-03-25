@@ -49,8 +49,9 @@ RUN dev_packages="git patch curl wget linux-pam-dev" && apk add --no-cache bash 
     && apk del curl git musl-dev gcc make zlib-dev libpq-dev openssl-dev autoconf automake m4 patch ncurses bash \
     && rm -rf /usr/local/src
 
-# The following script is necessary, when later extra modules are
-# loaded. The used script above "install-ns" does not need it.
+# Scripts:
+#  - get-naviserver-modules.sh is necessary, when later extra modules are loaded.
+#  - ns-certificates.sh is for consistent setup of self-signed certificates
 
-COPY get-naviserver-modules.sh /scripts
+COPY --chmod=755 ns-certificates.sh get-naviserver-modules.sh /scripts/
 
