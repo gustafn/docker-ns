@@ -127,7 +127,7 @@ this location.
 |--------|--------|-------------|
 | `TZ` | unset | Time zone (e.g. `Europe/Vienna`) |
 | `oacs_server` | `openacs` | Logical OpenACS server name |
-| `oacs_hostname` | `localhost` | Hostname used by OpenACS |
+| `oacs_hostname` | `localhost` | Hostname(s) passed to OpenACS configuration file |
 | `oacs_serverroot` | `/var/www/openacs` | OpenACS server root directory |
 | `oacs_tag` | `oacs-5-10` | Repository tag indicating the OpenACS version when source tree is inside the container|
 
@@ -299,7 +299,7 @@ renewal is assumed. This mirrors the behavior of `/run/secrets`.
 
 | Variable                          | Purpose                                                             |
 | --------------------------------- | ------------------------------------------------------------------- |
-| `oacs_hostname`                   | Hostname used for certificate CN/SAN and default PEM filename.      |
+| `oacs_hostname`                   | Hostname(s) used for virtual host names and certificate CN/SAN      |
 | `oacs_certificate`                | Optional explicit full path to a certificate PEM (key+cert).        |
 | `certificatesdir`                 | If set and non-empty, enables external certificate management mode. |
 | `oacs_certificates` (volume name) | Default named volume for storing generated or copied certificates.  |

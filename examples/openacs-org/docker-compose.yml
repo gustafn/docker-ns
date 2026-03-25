@@ -166,7 +166,7 @@ services:
       # 'nsdconfig' is a relative name under /var/www/openacs/etc/
       nsdconfig: ${nsdconfig:-}
 
-      oacs_hostname: ${hostname:-localhost}
+      oacs_hostname: "openacs.org www.openacs.org www.openacs.net openacs.net www.openacs.com openacs.com openacs.wu.ac.at openacs.wu-wien.ac.at smtp.openacs.org"
       oacs_server: ${hostname:-openacs}
       oacs_serverprettyname: OpenACS.org
       oacs_serverroot: /var/www/openacs
