@@ -53,12 +53,15 @@ sync: openacs/scripts/oacs-db-env.sh \
 	naviserver/get-naviserver-modules.sh \
 	naviserver-pg/get-naviserver-modules.sh \
 	naviserver-oracle/get-naviserver-modules.sh \
-	openacs/scripts/get-naviserver-modules.sh
+	openacs/scripts/get-naviserver-modules.sh \
+	naviserver/ns-certificates.sh \
+	openacs/scripts/ns-certificates.sh
 
 openacs/scripts/oacs-db-env.sh: scripts/oacs-db-env.sh
 	cp -p $< $@
 munin-node/oacs-db-env.sh: scripts/oacs-db-env.sh
 	cp -p $< $@
+
 NSMOD_TARGETS = \
   naviserver/get-naviserver-modules.sh \
   naviserver-pg/get-naviserver-modules.sh \
@@ -68,6 +71,12 @@ NSMOD_TARGETS = \
 $(NSMOD_TARGETS): scripts/get-naviserver-modules.sh
 	cp -p $< $@
 
+CERT_TARGETS = \
+  naviserver/ns-certificates.sh \
+  openacs/scripts/ns-certificates.sh
+
+$(CERT_TARGETS): scripts/ns-certificates.sh
+	cp -p $< $@
 
 # ----------------------------------------------------------------------
 # Stamp dependency chain (core images)
