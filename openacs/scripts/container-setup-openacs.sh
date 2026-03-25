@@ -23,6 +23,12 @@ echo "$(date '+%Y-%m-%d %H:%M:%S%z') -- container-setup-openacs.sh called --"
 : "${install_dotlrn:-0}"
 
 #
+# "oacs-hostname" might be a list of domain names. Take just the first one:
+#
+set -- $oacs_hostname
+first_hostname=$1
+
+#
 # Get setup info from compilation steps:
 . /usr/local/ns/lib/nsConfig.sh
 
@@ -60,7 +66,7 @@ fi
 if [ "${nsdconfig+x}" = x ]; then
   cfg_name=$nsdconfig
   if [ -z "$cfg_name" ]; then
-    cfg_name="${oacs_hostname}-config.tcl"
+    cfg_name="${first_hostname}-config.tcl"
   fi
   nsdconfig="${oacs_serverroot}/etc/${cfg_name}"
 fi
@@ -79,7 +85,7 @@ if [ "${certificate+x}" = x ]; then
   # certificate variable is present => enable new/relative mode
   cert_name=$certificate
   if [ -z "$cert_name" ]; then
-    cert_name=${oacs_hostname}.pem
+    cert_name=${first_hostname}.pem
   fi
 
   new_path="${oacs_serverroot}/certificates/${cert_name}"
@@ -101,7 +107,7 @@ default_ns_certdir=${default_ns_certdir:-/var/lib/naviserver/certificates}
 
 # Call the shared helper, which return resolved cert path on stdout
 resolved_cert=$(
-  ns_setup_certificates "$default_ns_certdir" "$oacs_hostname" "${passed_cert-}"
+  ns_setup_certificates "$default_ns_certdir" "$first_hostname" "${passed_cert-}"
 ) || return 1
 
 oacs_certificate=$resolved_cert
