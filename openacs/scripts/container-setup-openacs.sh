@@ -20,7 +20,7 @@ echo "$(date '+%Y-%m-%d %H:%M:%S%z') -- container-setup-openacs.sh called --"
 : "${oacs_db_user:?}"
 
 : "${oacs_tag:=oacs-5-10}"
-: "${nsdconfig:=}"
+: "${nsdconfig:=/usr/local/ns/conf/openacs-config.tcl}"
 : "${install_dotlrn:=0}"
 
 #
@@ -56,18 +56,15 @@ if [ -x /scripts/wait-for-postgres.sh ]; then
 fi
 
 
-# Handling configuration files (opt-in to use alternate name)
-#   If 'nsdconfig' is set, treat it as a relative path under
-#     <oacs_serverroot>/etc/<nsdconfig>
-#   If empty => default <hostname>-config.tcl
-
-cfg_name="${nsdconfig}"
-
-if [ -z "$cfg_name" ]; then
-  cfg_name="${first_hostname}-config.tcl"
-fi
-
-nsdconfig="${oacs_serverroot}/etc/${cfg_name}"
+case "$nsdconfig" in
+  /*)
+    # Absolute path: use as-is.
+    ;;
+  *)
+    # Relative path/name: resolve under the OpenACS etc directory.
+    nsdconfig="${oacs_serverroot}/etc/${nsdconfig}"
+    ;;
+esac
 
 echo "NaviServer configuration file ${nsdconfig}"
 export nsdconfig

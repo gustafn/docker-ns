@@ -182,11 +182,8 @@ buildx-force:
 	$(MAKE) buildx
 
 clean:
-	rm -f $(STAMP) $(STAMP).pushed $(STAMP).pushed-* \
-	      .builtx-amd64-$(BASE)-$(RELEASE_TAG)-$(VERSION_SUFFIX)-nc* \
-	      .builtx-arm64-$(BASE)-$(RELEASE_TAG)-$(VERSION_SUFFIX)-nc* \
-	      $(STAMP_BUILDX_MANIFEST) \
-	      .builtx-$(BASE)-$(RELEASE_TAG)-$(VERSION_SUFFIX)
+	rm -f .built-* .built-*.pushed .built-*.pushed-* \
+            .builtx-*
 
 #
 # Local Variables:
