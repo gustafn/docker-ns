@@ -391,13 +391,7 @@ This image is designed to be consumed by:
 * Docker Compose stacks
 * Portainer stacks
 
-See the example stacks under:
-
-```
-examples/
-```
-
-for fully working configurations and stack-level documentation.
+See the example stacks under  [examples](https://github.com/gustafn/docker-ns/tree/main/examples) for fully working configurations and stack-level documentation.
 
 ---
 
@@ -422,10 +416,8 @@ with the corresponding examples.
 
 For complete runnable setups, see:
 
-```
-examples/oacs-db-inclusive/
-examples/openacs-org/
-```
+* [examples/oacs-db-inclusive/](https://github.com/gustafn/docker-ns/tree/main/examples/oacs-db-inclusive/)
+* [examples/openacs-org/](https://github.com/gustafn/docker-ns/tree/main/examples/openacs-org/)
 
 ---
 
