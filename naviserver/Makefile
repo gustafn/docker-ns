@@ -10,6 +10,9 @@ ALIAS_TAG ?=
 BASE_STAMP ?=
 
 VERSION_NS ?= GIT
+VERSION_TCL ?=
+VERSION_TCLLIB ?=
+VERSION_XOTCL ?=
 DOCKER_USERNAME ?= gustafn
 DOCKER_PROGRESS ?= plain
 PLATFORM ?= linux/amd64,linux/arm64
@@ -34,8 +37,12 @@ else
 ALIAS_TAG_OPT =
 endif
 
-VERSION_NS_NORM := $(if $(strip $(VERSION_NS)),$(VERSION_NS),default)
-LOCAL_TAG_NORM  := $(if $(strip $(LOCAL_TAG)),$(LOCAL_TAG),)
+VERSION_NS_NORM  := $(if $(strip $(VERSION_NS)),$(VERSION_NS),default)
+VERSION_TCL_NORM := $(if $(strip $(VERSION_TCL)),$(VERSION_TCL),default)
+VERSION_TCLLIB_NORM := $(if $(strip $(VERSION_TCLLIB)),$(VERSION_TCLLIB),default)
+VERSION_XOTCL_NORM  := $(if $(strip $(VERSION_XOTCL)),$(VERSION_XOTCL),default)
+LOCAL_TAG_NORM   := $(if $(strip $(LOCAL_TAG)),$(LOCAL_TAG),)
+VERSION_SUFFIX   := $(VERSION_NS_NORM)-tcl$(VERSION_TCL_NORM)-xotcl$(VERSION_XOTCL_NORM)-tcllib$(VERSION_TCLLIB_NORM)
 
 # Normalized platform strings for stamps/tags
 PLATFORM_AMD64 ?= linux/amd64
@@ -53,11 +60,11 @@ BUILDX_NOCACHE_AMD64 := $(if $(filter 1,$(NOCACHE_AMD64)),--no-cache,)
 BUILDX_NOCACHE_ARM64 := $(if $(filter 1,$(NOCACHE_ARM64)),--no-cache,)
 
 # Stamps for per-arch buildx and final manifest assembly
-STAMP_BUILDX_AMD64 := .builtx-amd64-$(BASE)-$(RELEASE_TAG)-$(VERSION_NS_NORM)-nc$(NOCACHE_AMD64)
-STAMP_BUILDX_ARM64 := .builtx-arm64-$(BASE)-$(RELEASE_TAG)-$(VERSION_NS_NORM)-nc$(NOCACHE_ARM64)
-STAMP_BUILDX_MANIFEST := .builtx-manifest-$(BASE)-$(RELEASE_TAG)-$(VERSION_NS_NORM)
-STAMP_BUILDX_LEGACY := .builtx-$(BASE)-$(RELEASE_TAG)-$(VERSION_NS_NORM)
-STAMP := .built-$(BASE)-$(RELEASE_TAG)-$(VERSION_NS_NORM)$(LOCAL_TAG_NORM)
+STAMP_BUILDX_AMD64 := .builtx-amd64-$(BASE)-$(RELEASE_TAG)-$(VERSION_SUFFIX)-nc$(NOCACHE_AMD64)
+STAMP_BUILDX_ARM64 := .builtx-arm64-$(BASE)-$(RELEASE_TAG)-$(VERSION_SUFFIX)-nc$(NOCACHE_ARM64)
+STAMP_BUILDX_MANIFEST := .builtx-manifest-$(BASE)-$(RELEASE_TAG)-$(VERSION_SUFFIX)
+STAMP_BUILDX_LEGACY := .builtx-$(BASE)-$(RELEASE_TAG)-$(VERSION_SUFFIX)
+STAMP := .built-$(BASE)-$(RELEASE_TAG)-$(VERSION_SUFFIX)$(LOCAL_TAG_NORM)
 
 
 INGREDIENTS = \
@@ -90,6 +97,9 @@ $(STAMP): $(INGREDIENTS)
 	  --build-arg "RELEASE_TAG=$(RELEASE_TAG)" \
 	  --build-arg "LOCAL_TAG=$(LOCAL_TAG)" \
 	  --build-arg "version_ns=$(VERSION_NS)" \
+	  --build-arg "version_tcl=$(VERSION_TCL)" \
+	  --build-arg "version_tcllib=$(VERSION_TCLLIB)" \
+	  --build-arg "version_xotcl=$(VERSION_XOTCL)" \
 	  --build-arg "system_pkgs=$(SYSTEM_PKGS)" \
 	  -t $(IMAGE) \
 	  -f $(DOCKERFILE) \
@@ -119,6 +129,9 @@ $(STAMP_BUILDX_AMD64): $(INGREDIENTS)
 	  --progress=$(DOCKER_PROGRESS) \
 	  --build-arg "RELEASE_TAG=$(RELEASE_TAG)" \
 	  --build-arg "version_ns=$(VERSION_NS)" \
+	  --build-arg "version_tcl=$(VERSION_TCL)" \
+	  --build-arg "version_tcllib=$(VERSION_TCLLIB)" \
+	  --build-arg "version_xotcl=$(VERSION_XOTCL)" \
 	  --build-arg "system_pkgs=$(SYSTEM_PKGS)" \
 	  -t $(IMAGE_AMD64) \
 	  -f $(DOCKERFILE) \
@@ -135,6 +148,9 @@ $(STAMP_BUILDX_ARM64): $(INGREDIENTS)
 	  --progress=$(DOCKER_PROGRESS) \
 	  --build-arg "RELEASE_TAG=$(RELEASE_TAG)" \
 	  --build-arg "version_ns=$(VERSION_NS)" \
+	  --build-arg "version_tcl=$(VERSION_TCL)" \
+	  --build-arg "version_tcllib=$(VERSION_TCLLIB)" \
+	  --build-arg "version_xotcl=$(VERSION_XOTCL)" \
 	  --build-arg "system_pkgs=$(SYSTEM_PKGS)" \
 	  -t $(IMAGE_ARM64) \
 	  -f $(DOCKERFILE) \
@@ -162,15 +178,15 @@ endif
 # ----------------------------------------------------------------------
 .PHONY: buildx-force
 buildx-force:
-	rm -f $(STAMP)
+	rm -f $(STAMP_BUILDX_AMD64) $(STAMP_BUILDX_ARM64) $(STAMP_BUILDX_MANIFEST)
 	$(MAKE) buildx
 
 clean:
 	rm -f $(STAMP) $(STAMP).pushed $(STAMP).pushed-* \
-	      .builtx-amd64-$(BASE)-$(RELEASE_TAG)-$(VERSION_NS_NORM)-nc* \
-	      .builtx-arm64-$(BASE)-$(RELEASE_TAG)-$(VERSION_NS_NORM)-nc* \
+	      .builtx-amd64-$(BASE)-$(RELEASE_TAG)-$(VERSION_SUFFIX)-nc* \
+	      .builtx-arm64-$(BASE)-$(RELEASE_TAG)-$(VERSION_SUFFIX)-nc* \
 	      $(STAMP_BUILDX_MANIFEST) \
-	      .builtx-$(BASE)-$(RELEASE_TAG)-$(VERSION_NS_NORM)
+	      .builtx-$(BASE)-$(RELEASE_TAG)-$(VERSION_SUFFIX)
 
 #
 # Local Variables:
