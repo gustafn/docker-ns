@@ -18,9 +18,10 @@ echo "$(date '+%Y-%m-%d %H:%M:%S%z') -- container-setup-openacs.sh called --"
 : "${oacs_db_host:?}"
 : "${oacs_db_name:?}"
 : "${oacs_db_user:?}"
-: "${oacs_tag:-oacs-5-10}"
 
-: "${install_dotlrn:-0}"
+: "${oacs_tag:=oacs-5-10}"
+: "${nsdconfig:=}"
+: "${install_dotlrn:=0}"
 
 #
 # "oacs-hostname" might be a list of domain names. Take just the first one:
@@ -59,17 +60,15 @@ fi
 #   If 'nsdconfig' is set, treat it as a relative path under
 #     <oacs_serverroot>/etc/<nsdconfig>
 #   If empty => default <hostname>-config.tcl
-#
-# If 'nsdconfig' is UNSET use
-#   /usr/local/ns/conf/openacs-config.tcl)
 
-if [ "${nsdconfig+x}" = x ]; then
-  cfg_name=$nsdconfig
-  if [ -z "$cfg_name" ]; then
-    cfg_name="${first_hostname}-config.tcl"
-  fi
-  nsdconfig="${oacs_serverroot}/etc/${cfg_name}"
+cfg_name="${nsdconfig}"
+
+if [ -z "$cfg_name" ]; then
+  cfg_name="${first_hostname}-config.tcl"
 fi
+
+nsdconfig="${oacs_serverroot}/etc/${cfg_name}"
+
 echo "NaviServer configuration file ${nsdconfig}"
 export nsdconfig
 
