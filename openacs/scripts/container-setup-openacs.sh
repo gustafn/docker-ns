@@ -206,30 +206,25 @@ if [ ! -e "$CONTAINER_ALREADY_STARTED" ] ; then
     # are executed as nsadmin.
     #
     if command -v fc-cache >/dev/null 2>&1; then
-        NS_HOME=$(awk -F: '$1 == "nsadmin" {print $6}' /etc/passwd)
-        NS_HOME="${NS_HOME:-/home/nsadmin}"
+        NS_HOME="${HOME:-/usr/local/ns}"
+        NS_CACHE_HOME="${XDG_CACHE_HOME:-${NS_HOME}/.cache}"
 
-        echo "... preparing fontconfig cache for nsadmin in ${NS_HOME} ..."
+        echo "... preparing fontconfig cache for nsadmin in ${NS_CACHE_HOME}/fontconfig ..."
 
-        mkdir -p "$NS_HOME" \
-                 "$NS_HOME/.cache/fontconfig" \
-                 "$NS_HOME/.local/share/fonts"
+        mkdir -p "$NS_CACHE_HOME/fontconfig" \
+              "$NS_HOME/.local/share/fonts"
 
-        chown nsadmin:nsadmin "$NS_HOME" \
-                              "$NS_HOME/.cache" \
-                              "$NS_HOME/.cache/fontconfig" \
-                              "$NS_HOME/.local" \
-                              "$NS_HOME/.local/share" \
-                              "$NS_HOME/.local/share/fonts"
+        chown -R nsadmin:nsadmin "$NS_CACHE_HOME" \
+              "$NS_HOME/.local"
 
-        chmod 0755 "$NS_HOME" \
-                   "$NS_HOME/.cache" \
-                   "$NS_HOME/.cache/fontconfig" \
-                   "$NS_HOME/.local" \
-                   "$NS_HOME/.local/share" \
-                   "$NS_HOME/.local/share/fonts"
+        chmod 0755 "$NS_CACHE_HOME" \
+              "$NS_CACHE_HOME/fontconfig" \
+              "$NS_HOME/.local" \
+              "$NS_HOME/.local/share" \
+              "$NS_HOME/.local/share/fonts"
 
-        su -s /bin/sh nsadmin -c "export HOME='$NS_HOME'; export XDG_CACHE_HOME='$NS_HOME/.cache'; fc-cache -f" \
+        su -s /bin/sh nsadmin -c \
+           "HOME='$NS_HOME' XDG_CACHE_HOME='$NS_CACHE_HOME' fc-cache -f" \
             || echo "Warning: fc-cache failed for nsadmin" >&2
     fi
 
