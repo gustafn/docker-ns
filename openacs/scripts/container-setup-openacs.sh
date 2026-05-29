@@ -199,6 +199,40 @@ if [ ! -e "$CONTAINER_ALREADY_STARTED" ] ; then
         fi
     fi
 
+    #
+    # If optional packages such as graphviz pulled in fontconfig, make sure
+    # the runtime user has a writable fontconfig cache. The system cache under
+    # /var/cache/fontconfig is typically root-owned, while tools such as dot
+    # are executed as nsadmin.
+    #
+    if command -v fc-cache >/dev/null 2>&1; then
+        NS_HOME=$(awk -F: '$1 == "nsadmin" {print $6}' /etc/passwd)
+        NS_HOME="${NS_HOME:-/home/nsadmin}"
+
+        echo "... preparing fontconfig cache for nsadmin in ${NS_HOME} ..."
+
+        mkdir -p "$NS_HOME" \
+                 "$NS_HOME/.cache/fontconfig" \
+                 "$NS_HOME/.local/share/fonts"
+
+        chown nsadmin:nsadmin "$NS_HOME" \
+                              "$NS_HOME/.cache" \
+                              "$NS_HOME/.cache/fontconfig" \
+                              "$NS_HOME/.local" \
+                              "$NS_HOME/.local/share" \
+                              "$NS_HOME/.local/share/fonts"
+
+        chmod 0755 "$NS_HOME" \
+                   "$NS_HOME/.cache" \
+                   "$NS_HOME/.cache/fontconfig" \
+                   "$NS_HOME/.local" \
+                   "$NS_HOME/.local/share" \
+                   "$NS_HOME/.local/share/fonts"
+
+        su -s /bin/sh nsadmin -c "export HOME='$NS_HOME'; export XDG_CACHE_HOME='$NS_HOME/.cache'; fc-cache -f" \
+            || echo "Warning: fc-cache failed for nsadmin" >&2
+    fi
+
     echo "Content of oacs_serverroot: ${oacs_serverroot}"
     ls -l "${oacs_serverroot}"
 
