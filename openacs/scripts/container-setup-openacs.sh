@@ -227,7 +227,6 @@ if [ ! -e "$CONTAINER_ALREADY_STARTED" ] ; then
            "HOME='$NS_HOME' XDG_CACHE_HOME='$NS_CACHE_HOME' fc-cache -f" \
             || echo "Warning: fc-cache failed for nsadmin" >&2
 
-        export XDG_CACHE_HOME="${XDG_CACHE_HOME:-/usr/local/ns/.cache}"
     fi
 
     echo "Content of oacs_serverroot: ${oacs_serverroot}"
@@ -401,12 +400,14 @@ echo "docker network setup DONE"
 
 ls -ltr /scripts/
 
-    LOGDIR="${oacs_logdir:-${oacs_serverroot}/log}"
-    mkdir -p "$LOGDIR"
-    chown nsadmin:nsadmin "$LOGDIR"
-    chmod 2775 "$LOGDIR"
-    echo "LOGDIR ${LOGDIR}"
-    ls -ld "${LOGDIR}"
+LOGDIR="${oacs_logdir:-${oacs_serverroot}/log}"
+mkdir -p "$LOGDIR"
+chown nsadmin:nsadmin "$LOGDIR"
+chmod 2775 "$LOGDIR"
+echo "LOGDIR ${LOGDIR}"
+ls -ld "${LOGDIR}"
+
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-/usr/local/ns/.cache}"
 
 echo "$(date '+%Y-%m-%d %H:%M:%S%z') -- container-setup-openacs.sh finished --"
 
