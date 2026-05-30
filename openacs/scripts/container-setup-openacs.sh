@@ -206,7 +206,7 @@ if [ ! -e "$CONTAINER_ALREADY_STARTED" ] ; then
     # are executed as nsadmin.
     #
     if command -v fc-cache >/dev/null 2>&1; then
-        NS_HOME="${HOME:-/usr/local/ns}"
+        NS_HOME="/usr/local/ns"
         NS_CACHE_HOME="${XDG_CACHE_HOME:-${NS_HOME}/.cache}"
 
         echo "... preparing fontconfig cache for nsadmin in ${NS_CACHE_HOME}/fontconfig ..."
@@ -226,6 +226,8 @@ if [ ! -e "$CONTAINER_ALREADY_STARTED" ] ; then
         su -s /bin/sh nsadmin -c \
            "HOME='$NS_HOME' XDG_CACHE_HOME='$NS_CACHE_HOME' fc-cache -f" \
             || echo "Warning: fc-cache failed for nsadmin" >&2
+
+        export XDG_CACHE_HOME="${XDG_CACHE_HOME:-/usr/local/ns/.cache}"
     fi
 
     echo "Content of oacs_serverroot: ${oacs_serverroot}"
@@ -237,9 +239,6 @@ if [ ! -e "$CONTAINER_ALREADY_STARTED" ] ; then
     chmod 2775 "$LOGDIR"
     echo "LOGDIR ${LOGDIR}"
     ls -ld "${LOGDIR}"
-
-    #mkdir -p ${oacs_serverroot}/log
-    #mkdir -p ${oacs_serverroot}/www/SYSTEM
 
     if [ ! -f "${oacs_serverroot}/install.xml" ] ; then
         echo "Using Install file: ${install_file:-openacs-xowf-install.xml}"
