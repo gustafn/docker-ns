@@ -30,20 +30,24 @@ RUN addgroup -S munin 2>/dev/null || true \
 
 # Install NaviServer-specific Munin plugins and core Munin plugins
 # using a temporary .build-deps virtual package for git.
+ARG MUNIN_PLUGINS_NS_REF=HEAD
+
 RUN apk add --no-cache --virtual .build-deps git \
  && mkdir -p /usr/local/munin/lib/plugins /usr/local/share/munin-plugins-ns /usr/share/munin/plugins /opt \
  \
  # NaviServer / OpenACS Munin plugins
- && git clone --depth 1 https://github.com/gustafn/munin-plugins-ns.git /opt/munin-plugins-ns \
- && cp /opt/munin-plugins-ns/plugins/* /usr/local/munin/lib/plugins/ \
+ && git clone https://github.com/gustafn/munin-plugins-ns.git /opt/munin-plugins-ns \
+ && cd /opt/munin-plugins-ns \
+ && git checkout "$MUNIN_PLUGINS_NS_REF" \
+ && cp plugins/* /usr/local/munin/lib/plugins/ \
  && chmod 755 /usr/local/munin/lib/plugins/* \
- && cp /opt/munin-plugins-ns/tcl/munin.tcl /usr/local/share/munin-plugins-ns/munin.tcl \
+ && cp tcl/munin.tcl /usr/local/share/munin-plugins-ns/munin.tcl \
  && chmod 644 /usr/local/share/munin-plugins-ns/munin.tcl \
  \
  # Core Munin node plugins (including postgres_*)
  && git clone --depth 1 https://github.com/munin-monitoring/munin.git /opt/munin-core \
  && mkdir -p /usr/share/munin/plugins/ \
- && cp /opt/munin-core/plugins/node.d/* /usr/share/munin/plugins/ || true \
+ && (cp /opt/munin-core/plugins/node.d/* /usr/share/munin/plugins/ || true) \
  && chmod 755 /usr/share/munin/plugins/* \
  \
  # Cleanup
