@@ -286,6 +286,7 @@ services:
   munin-master:
     image: gustafn/munin-master:latest    # build from Dockerfile.alpine
     restart: unless-stopped
+    init: true
 
     environment:
       <<: *default-env
