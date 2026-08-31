@@ -29,6 +29,22 @@ Source repositories:
 
 The image is published as [gustafn/openacs](https://hub.docker.com/repository/docker/gustafn/openacs/)
 
+The published `gustafn/openacs:latest` image is built with OpenSSL 4.0.2.
+
+## OpenSSL and HTTP/3 support
+
+To build the image with a specific OpenSSL release, pass `VERSION_OPENSSL` to
+the Makefile. For example, from the top-level `docker-ns` directory:
+
+```sh
+make VERSION_OPENSSL=4.0.2 build-openacs
+```
+
+The corresponding Docker build argument is `version_openssl`. When the option
+is omitted, the image uses the default system OpenSSL. HTTP/3 support requires
+OpenSSL 4.0.2 or newer; specifying such a version also builds the required
+HTTP/3 support library.
+
 ---
 
 ## Filesystem layout and design principles

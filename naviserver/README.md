@@ -57,6 +57,8 @@ Examples:
 The `latest` tag always refers to the most recent NaviServer version
 on the recommended default base.
 
+The published `gustafn/naviserver:latest` image is built with OpenSSL 4.0.2.
+
 ---
 
 ## Content
@@ -219,6 +221,18 @@ docker build --no-cache \
 ```
 
 This mechanism is used by derived images and advanced setups.
+
+To select an OpenSSL release via the component or top-level Makefile, pass
+`VERSION_OPENSSL`:
+
+```sh
+make VERSION_OPENSSL=4.0.2 build
+```
+
+The corresponding Docker build argument is `version_openssl`. When the option
+is omitted, the image uses the default system OpenSSL. HTTP/3 support requires
+OpenSSL 4.0.2 or newer; specifying such a version also builds the required
+HTTP/3 support library.
 
 ---
 

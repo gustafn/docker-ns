@@ -63,6 +63,8 @@ For each component:
 The registry state (manifest digests) is authoritative.  
 Docker Hub’s web UI may lag behind after pushes.
 
+The published `gustafn/*:latest` images are built with OpenSSL 4.0.2.
+
 ---
 
 ## Examples
@@ -144,6 +146,16 @@ make
 # Build only OpenACS
 make build-openacs
 ```
+
+To build with a specific OpenSSL release, pass `VERSION_OPENSSL` to `make`:
+
+```sh
+make VERSION_OPENSSL=4.0.2 build-openacs
+```
+
+When `VERSION_OPENSSL` is omitted, the image uses the default system OpenSSL.
+HTTP/3 support requires OpenSSL 4.0.2 or newer; specifying such a version also
+builds the required HTTP/3 support library.
 
 ### Local development builds (recommended for modifications)
 
