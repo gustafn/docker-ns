@@ -18,9 +18,9 @@ try {
 
 if {[dict exists $jsonDict NetworkSettings]} {
     #
-    # The docker.config file is a JSON file containing "HostIp" and
-    # "HostPort" for the plain HTTP port (internally "8080/tcp") and the
-    # HTTPS port (internally "8443/tcp") .
+    # The docker.config file contains externally published mappings for
+    # the plain HTTP endpoint (internally 8080/tcp), the HTTPS endpoint
+    # (internally 8443/tcp), and HTTP/3/QUIC (internally 8443/udp).
     #
     #    ...
     #    "NetworkSettings": {
@@ -41,16 +41,20 @@ if {[dict exists $jsonDict NetworkSettings]} {
     #     },
     #     ...
     #
+    set supportedMappings {
+        8080/tcp http
+        8443/tcp https
+        8443/udp h3
+    }
     foreach {label networkMappings} [dict get $jsonDict NetworkSettings Ports] {
-        if {$label eq "8080/tcp"} {
-            set proto http
-        } elseif {$label eq "8443/tcp"} {
-            set proto https
-        } else {
-            puts stdout "docker-setup.tcl: error: unexpected label '$label' in $networkInfo"
+
+        if {![dict exists $supportedMappings $label]} {
+            puts stdout "docker-setup.tcl: ignoring unsupported network label '$label'"
             continue
         }
-        puts stdout "docker-setup.tcl: processing docker network label '$label'"
+        set proto [dict get $supportedMappings $label]
+
+        puts stdout "docker-setup.tcl: processing Docker network label '$label' as '$proto'"
 
         foreach mapping $networkMappings {
             try {
@@ -58,17 +62,74 @@ if {[dict exists $jsonDict NetworkSettings]} {
                 set port [dict get $mapping HostPort]
                 lappend containerMapping $label [list proto $proto host $host port $port]
             } on error {errorMsg} {
-                puts stdout "docker-setup.tcl: error: processing docker network leads to error: $errorMsg\n<<<$mapping>>>"
+                puts stdout "docker-setup.tcl: error while processing network mapping: $errorMsg\n<<<$mapping>>>"
             }
         }
     }
 }
 
 set F [open /scripts/docker-dict.tcl w]
+
 puts $F [list namespace eval ::docker {}]
 puts $F [list set ::docker::jsonDict $jsonDict]
 if {[info exists containerMapping]} {
     puts $F [list set ::docker::containerMapping $containerMapping]
 }
+
+puts $F {
+    #
+    # Docker support: determine externally visible host:port mappings.
+    #
+    # When NaviServer runs inside a container, ports are often published on the
+    # Docker host with a (potentially different) external address and port.
+    # The returned mappings can be used to whitelist additional Host header
+    # values (e.g., "host:port") for a given server configuration.
+    #
+    # Legacy implementation for setups where the docker environment does not
+    # provide this helper.
+    #
+    proc ::docker::map_external_address_to_server {server port} {
+        set label "$port/tcp"
+        set s [ns_set create]
+        if {$port eq ""
+            || ![info exists ::docker::containerMapping]
+            || ![dict exists $::docker::containerMapping $label]
+        } {
+            return $s
+        }
+        foreach {k info} $::docker::containerMapping {
+            if {$k ne $label} continue
+            set host    [dict get $info host]
+            set pubport [dict get $info port]
+            if {[ns_ip valid $host] && [ns_ip inany $host]} continue
+            ns_set put $s $server ${host}:${pubport}
+        }
+        return $s
+    }
+}
+
+puts $F {
+    proc ::docker::external_port {port {transport tcp}} {
+        set label "$port/$transport"
+
+        if {![info exists ::docker::containerMapping]
+            || ![dict exists $::docker::containerMapping $label]
+        } {
+            return ""
+        }
+
+        set ports {}
+        foreach {key info} $::docker::containerMapping {
+            if {$key ne $label} {
+                continue
+            }
+            lappend ports [dict get $info port]
+        }
+
+        set ports [lsort -unique $ports]
+        return [lindex $ports 0]
+    }
+}
+
 close $F
 puts stdout "docker-setup.tcl: script /scripts/docker-dict.tcl generated"
