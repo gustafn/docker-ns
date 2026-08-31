@@ -13,6 +13,7 @@ VERSION_NS ?= GIT
 VERSION_TCL ?=
 VERSION_TCLLIB ?=
 VERSION_XOTCL ?=
+VERSION_OPENSSL ?=
 DOCKER_USERNAME ?= gustafn
 DOCKER_PROGRESS ?= plain
 PLATFORM ?= linux/amd64,linux/arm64
@@ -41,8 +42,9 @@ VERSION_NS_NORM  := $(if $(strip $(VERSION_NS)),$(VERSION_NS),default)
 VERSION_TCL_NORM := $(if $(strip $(VERSION_TCL)),$(VERSION_TCL),default)
 VERSION_TCLLIB_NORM := $(if $(strip $(VERSION_TCLLIB)),$(VERSION_TCLLIB),default)
 VERSION_XOTCL_NORM  := $(if $(strip $(VERSION_XOTCL)),$(VERSION_XOTCL),default)
+VERSION_OPENSSL_NORM := $(if $(strip $(VERSION_OPENSSL)),$(VERSION_OPENSSL),default)
 LOCAL_TAG_NORM   := $(if $(strip $(LOCAL_TAG)),$(LOCAL_TAG),)
-VERSION_SUFFIX   := $(VERSION_NS_NORM)-tcl$(VERSION_TCL_NORM)-xotcl$(VERSION_XOTCL_NORM)-tcllib$(VERSION_TCLLIB_NORM)
+VERSION_SUFFIX   := $(VERSION_NS_NORM)-tcl$(VERSION_TCL_NORM)-xotcl$(VERSION_XOTCL_NORM)-tcllib$(VERSION_TCLLIB_NORM)-openssl$(VERSION_OPENSSL_NORM)
 
 # Normalized platform strings for stamps/tags
 PLATFORM_AMD64 ?= linux/amd64
@@ -100,6 +102,7 @@ $(STAMP): $(INGREDIENTS)
 	  --build-arg "version_tcl=$(VERSION_TCL)" \
 	  --build-arg "version_tcllib=$(VERSION_TCLLIB)" \
 	  --build-arg "version_xotcl=$(VERSION_XOTCL)" \
+	  --build-arg "version_openssl=$(VERSION_OPENSSL)" \
 	  --build-arg "system_pkgs=$(SYSTEM_PKGS)" \
 	  -t $(IMAGE) \
 	  -f $(DOCKERFILE) \
@@ -132,6 +135,7 @@ $(STAMP_BUILDX_AMD64): $(INGREDIENTS)
 	  --build-arg "version_tcl=$(VERSION_TCL)" \
 	  --build-arg "version_tcllib=$(VERSION_TCLLIB)" \
 	  --build-arg "version_xotcl=$(VERSION_XOTCL)" \
+	  --build-arg "version_openssl=$(VERSION_OPENSSL)" \
 	  --build-arg "system_pkgs=$(SYSTEM_PKGS)" \
 	  -t $(IMAGE_AMD64) \
 	  -f $(DOCKERFILE) \
@@ -151,6 +155,7 @@ $(STAMP_BUILDX_ARM64): $(INGREDIENTS)
 	  --build-arg "version_tcl=$(VERSION_TCL)" \
 	  --build-arg "version_tcllib=$(VERSION_TCLLIB)" \
 	  --build-arg "version_xotcl=$(VERSION_XOTCL)" \
+	  --build-arg "version_openssl=$(VERSION_OPENSSL)" \
 	  --build-arg "system_pkgs=$(SYSTEM_PKGS)" \
 	  -t $(IMAGE_ARM64) \
 	  -f $(DOCKERFILE) \

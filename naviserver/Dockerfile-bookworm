@@ -15,11 +15,16 @@ ENV LC_ALL=en_US.UTF-8
 #ARG version_tcl=8.6.17   # passed in via --build-arg "version_tcl=..."
 #ARG version_tcllib=1.20  # passed in via --build-arg "version_tcllib=..."
 #ARG version_xotcl=2.4.0  # passed in via --build-arg "version_xotcl=..."
+#ARG version_openssl=3.5.2 # passed in via --build-arg "version_openssl=..."
 
 ARG version_ns
 ARG version_tcl
 ARG version_tcllib
 ARG version_xotcl
+ARG version_openssl
+
+ENV PATH="/usr/local/ns/openssl-${version_openssl}/bin:${PATH}"
+ENV LD_LIBRARY_PATH="/usr/local/ns/openssl-${version_openssl}/lib64:/usr/local/ns/openssl-${version_openssl}/lib"
 
 ARG with_ns_doc=1
 ARG with_system_malloc=1
@@ -42,6 +47,7 @@ RUN  DEBIAN_FRONTEND=noninteractive apt-get -qq update  && DEBIAN_FRONTEND=nonin
        with_debug_flags=${with_debug_flags} \
        version_tcllib=${version_tcllib} \
        version_xotcl=${version_xotcl} \
+       version_openssl=${version_openssl} \
        version_tdom=${version_tdom} \
        ns_modules=${ns_modules} \
        bash install-ns.sh build \
