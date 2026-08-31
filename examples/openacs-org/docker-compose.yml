@@ -110,7 +110,7 @@ x-default-env: &default-env
   TZ: Europe/Vienna
 
 x-db-env: &db-env
-  oacs_db_name: ${hostname}
+  oacs_db_name: ${db_name:-${hostname}}
   oacs_db_user: ${db_user:-openacs}
   oacs_db_host: ${db_host:-localhost}
   oacs_db_port: ${db_port:-5432}
@@ -132,12 +132,12 @@ services:
       - /bin/sh
       - -c
       - |
-        if . /scripts/container-setup-openacs.sh; then
-          exec /usr/local/ns/bin/nsd -i -t ${nsdconfig:-/usr/local/ns/conf/openacs-config.tcl} -u nsadmin -g nsadmin
-        else
-          rc=$$?
-          echo "ERROR: container setup failed with status $$rc" >&2
+        if [ "$$DEBUG" = "1" ]; then
+          . /scripts/container-setup-openacs.sh
           sleep infinity
+        else
+          . /scripts/container-setup-openacs.sh
+          exec /usr/local/ns/bin/nsd -i -t ${nsdconfig:-/usr/local/ns/conf/openacs-config.tcl} -u nsadmin -g nsadmin
         fi
 
     networks:
@@ -146,13 +146,16 @@ services:
     ports:
       # Provide external IP address and ports, mapped from internal ones
       # By default, the local IP address and ephemeral ports are used.
-      - ${ipaddress:-127.0.0.1}:${httpport:-}:8080
-      - ${ipaddress:-127.0.0.1}:${httpsport:-}:8443
+      - ${ipaddress:-127.0.0.1}:${httpport:-}:8080/tcp
+      - ${ipaddress:-127.0.0.1}:${httpsport:-}:8443/tcp
+      - ${ipaddress:-127.0.0.1}:${httpsport:-}:8443/udp
       # Optional IPv6 bindings (docker-compose syntax requires brackets)
-      - "[${ipv6address:-::1}]:${httpport:-}:8080"
-      - "[${ipv6address:-::1}]:${httpsport:-}:8443"
+      - "[${ipv6address:-::1}]:${httpport:-}:8080/tcp"
+      - "[${ipv6address:-::1}]:${httpsport:-}:8443/tcp"
+      - "[${ipv6address:-::1}]:${httpsport:-}:8443/udp"
 
     environment:
+      DEBUG: "0"
       <<:
         - *default-env
         - *db-env
