@@ -18,6 +18,10 @@ smtpd_recipient_restrictions = permit_mynetworks, reject_unauth_destination
 # We currently use MX lookups, so no relayhost by default
 #relayhost = [${POSTFIX_RELAYHOST}]:${POSTFIX_RELAYPORT}
 
+alias_maps = ${POSTFIX_ALIAS_MAPS}
+virtual_alias_domains = ${POSTFIX_VIRTUAL_ALIAS_DOMAINS}
+virtual_alias_maps = ${POSTFIX_VIRTUAL_ALIAS_MAPS}
+
 # TLS (paths can be overridden if needed)
 smtpd_tls_cert_file = ${POSTFIX_TLS_CERT_FILE}
 smtpd_tls_key_file  = ${POSTFIX_TLS_KEY_FILE}

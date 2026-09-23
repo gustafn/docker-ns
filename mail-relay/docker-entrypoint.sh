@@ -8,10 +8,18 @@ set -e
 : "${POSTFIX_TLS_CERT_FILE:=/var/www/openacs.org/etc/openacs.org.pem}"
 : "${POSTFIX_TLS_KEY_FILE:=${POSTFIX_TLS_CERT_FILE}}"
 : "${POSTFIX_MYNETWORKS:=127.0.0.0/8 [::1]/128 172.16.0.0/12 172.27.0.0/16}"
+: "${POSTFIX_ALIAS_MAPS:=}"
+: "${POSTFIX_VIRTUAL_ALIAS_DOMAINS:=}"
+: "${POSTFIX_VIRTUAL_ALIAS_MAPS:=}"
 #: "${POSTFIX_RELAYPORT:=25}"
 
-
-export POSTFIX_MYORIGIN POSTFIX_TLS_CERT_FILE POSTFIX_TLS_KEY_FILE POSTFIX_MYNETWORKS
+export POSTFIX_MYORIGIN \
+       POSTFIX_TLS_CERT_FILE \
+       POSTFIX_TLS_KEY_FILE \
+       POSTFIX_MYNETWORKS \
+       POSTFIX_ALIAS_MAPS \
+       POSTFIX_VIRTUAL_ALIAS_DOMAINS \
+       POSTFIX_VIRTUAL_ALIAS_MAPS
 
 # Only (re)generate if not present, or always if you prefer
 if [ ! -f /etc/postfix/main.cf ]; then

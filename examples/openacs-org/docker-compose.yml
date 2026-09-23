@@ -238,9 +238,12 @@ services:
       <<: *default-env
       # Use the managed certificate store (same as OpenACS uses)
       POSTFIX_TLS_CERT_FILE: /var/lib/naviserver/certificates/${hostname}.pem
+      POSTFIX_VIRTUAL_ALIAS_MAPS: texthash:/etc/postfix/virtual
       #POSTFIX_MYNETWORKS: 127.0.0.0/8 [::1]/128 172.16.0.0/12 172.27.0.0/16
 
     volumes:
+      - /etc/postfix/virtual:/etc/postfix/virtual:ro
+      - oacs_mailspool:/var/spool/postfix
       - ${logdir:-oacs_log}:/var/log
       - ${certificatesdir:-oacs_certificates}:/var/lib/naviserver/certificates:ro
 
@@ -313,15 +316,12 @@ services:
       - oacs-net
 
 volumes:
-   oacs_data:
-   oacs_log:
-   oacs_secrets:
-   oacs_certificates:
+  oacs_data:
+  oacs_log:
+  oacs_secrets:
+  oacs_certificates:
+  oacs_mailspool:
 
 networks:
   oacs-net:
-    name: oacs-net
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.30.0.0/16
