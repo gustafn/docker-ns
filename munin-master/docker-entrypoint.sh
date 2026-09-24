@@ -88,15 +88,20 @@ mkdir -p /var/cache/fontconfig
 chown munin:munin /var/cache/fontconfig 2>/dev/null || true
 
 #
-# in case the stock provided setup has no crontab activaton, do it manually.
+# The packaged per-user crontab retains the original numeric UID after
+# the munin account is remapped. Replace it with exactly one root-owned
+# schedule that explicitly runs munin-cron as the mapped munin user.
 #
-#if ! grep -q 'munin-cron' /etc/crontabs/root 2>/dev/null; then
-#    cat >> /etc/crontabs/root <<'EOF'
-## Run Munin every 5 minutes
-#*/1 * * * * su -s /bin/sh munin -c /usr/bin/munin-cron
-#EOF
-#fi
-#chmod 600 /etc/crontabs/root
+rm -f /etc/crontabs/munin
+
+sed -i '\|su -s /bin/sh munin -c /usr/bin/munin-cron|d' \
+    /etc/crontabs/root
+
+cat >> /etc/crontabs/root <<'EOF'
+
+# Run Munin every 5 minutes
+*/5 * * * * su -s /bin/sh munin -c /usr/bin/munin-cron
+EOF
 
 # Run one initial munin-cron so you don't have to wait for the first 5-minute tick
 echo "munin-master: running initial munin-cron..."

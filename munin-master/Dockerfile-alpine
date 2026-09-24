@@ -2,7 +2,7 @@
 
 # Alpine-based Munin master that generates static HTML/graphs via munin-cron
 
-FROM alpine:3
+FROM alpine:3.24
 
 # Runtime deps:
 #  - munin        : master scripts (munin-cron, munin-{update,graph,html}, etc.)
@@ -20,6 +20,45 @@ RUN apk add --no-cache \
       tzdata \
       gettext-envsubst \
       perl-log-log4perl
+
+COPY patches/GraphOld.pm-rrdtool-1.10.patch \
+     /tmp/GraphOld.pm-rrdtool-1.10.patch
+
+RUN set -eu; \
+    apk add --no-cache --virtual .patch-deps patch; \
+    munin_version="$(apk info -v munin | sed 's/^munin-//')"; \
+    rrdtool_version="$(apk info -v rrdtool | sed 's/^rrdtool-//')"; \
+    graphold="$(perl -MMunin::Master::GraphOld \
+        -e 'print $INC{"Munin/Master/GraphOld.pm"}')"; \
+    perl_root="${graphold%/Munin/Master/GraphOld.pm}"; \
+    echo "Munin version: $munin_version"; \
+    echo "RRDtool version: $rrdtool_version"; \
+    case "${munin_version}:${rrdtool_version}" in \
+        2.0.76-r*:1.1[0-9].*-r*) \
+            if patch --dry-run \
+                -d "$perl_root" -p2 \
+                < /tmp/GraphOld.pm-rrdtool-1.10.patch; \
+            then \
+                patch \
+                    -d "$perl_root" -p2 \
+                    < /tmp/GraphOld.pm-rrdtool-1.10.patch; \
+            elif patch --dry-run -R \
+                -d "$perl_root" -p2 \
+                < /tmp/GraphOld.pm-rrdtool-1.10.patch; \
+            then \
+                echo "RRDtool compatibility patch already applied"; \
+            else \
+                echo "ERROR: compatibility patch does not match GraphOld.pm" >&2; \
+                exit 1; \
+            fi \
+            ;; \
+        *) \
+            echo "RRDtool compatibility patch not required"; \
+            ;; \
+    esac; \
+    perl -c "$graphold"; \
+    rm -f /tmp/GraphOld.pm-rrdtool-1.10.patch; \
+    apk del .patch-deps
 
 # Ensure munin user/group exists (Alpine may or may not create it with the package)
 RUN addgroup -S munin && adduser -S -D -H -G munin munin || true
