@@ -87,13 +87,16 @@ fi
 mkdir -p /var/cache/fontconfig
 chown munin:munin /var/cache/fontconfig 2>/dev/null || true
 
-if ! grep -q 'munin-cron' /etc/crontabs/root 2>/dev/null; then
-    cat >> /etc/crontabs/root <<'EOF'
-# Run Munin every 5 minutes
-*/1 * * * * su -s /bin/sh munin -c /usr/bin/munin-cron
-EOF
-fi
-chmod 600 /etc/crontabs/root
+#
+# in case the stock provided setup has no crontab activaton, do it manually.
+#
+#if ! grep -q 'munin-cron' /etc/crontabs/root 2>/dev/null; then
+#    cat >> /etc/crontabs/root <<'EOF'
+## Run Munin every 5 minutes
+#*/1 * * * * su -s /bin/sh munin -c /usr/bin/munin-cron
+#EOF
+#fi
+#chmod 600 /etc/crontabs/root
 
 # Run one initial munin-cron so you don't have to wait for the first 5-minute tick
 echo "munin-master: running initial munin-cron..."
