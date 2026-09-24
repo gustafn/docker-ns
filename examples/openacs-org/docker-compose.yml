@@ -267,7 +267,7 @@ services:
         - *default-env
         - *db-env
       MUNIN_HOSTNAME: ${hostname}              # Munin node name (as seen by master)
-      MUNIN_ALLOW_CIDR: 172.30.0.0/16          # or your master’s subnet (oacs-net)
+      MUNIN_ALLOW_CIDR: 172.16.0.0/12          # or your master’s subnet (oacs-net)
       # Tell naviserver_* plugins how to reach OpenACS:
       NS_SERVER_NAME: ${hostname}              # naviserver_openacs.org_*
       NS_ADDRESS: openacs-org                  # Docker service name
