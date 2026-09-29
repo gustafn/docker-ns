@@ -26,8 +26,10 @@ COPY patches/GraphOld.pm-rrdtool-1.10.patch \
 
 RUN set -eu; \
     apk add --no-cache --virtual .patch-deps patch; \
-    munin_version="$(apk info -v munin | sed 's/^munin-//')"; \
-    rrdtool_version="$(apk info -v rrdtool | sed 's/^rrdtool-//')"; \
+    munin_version="$(apk info -v | sed -n 's/^munin-\([0-9].*\)$/\1/p')"; \
+    rrdtool_version="$(apk info -v | sed -n 's/^rrdtool-\([0-9].*\)$/\1/p')"; \
+    test -n "$munin_version"; \
+    test -n "$rrdtool_version"; \
     graphold="$(perl -MMunin::Master::GraphOld \
         -e 'print $INC{"Munin/Master/GraphOld.pm"}')"; \
     perl_root="${graphold%/Munin/Master/GraphOld.pm}"; \
