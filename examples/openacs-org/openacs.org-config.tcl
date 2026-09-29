@@ -1602,24 +1602,56 @@ ns_section ns/server/$server/modules {
 ns_section ns/server/$server/modules {
     if {$smtpdport ne ""} {ns_param nssmtpd nssmtpd}
 }
-ns_section "ns/server/$server/module/nssmtpd" {
+ns_section ns/server/$server/module/nssmtpd {
     #------------------------------------------------------------------
     # Basic binding and SMTP behaviour
     #------------------------------------------------------------------
+    ns_param address     0.0.0.0               ;# local interface SMTP server
     ns_param port        $smtpdport
-    ns_param address     127.0.0.1             ;# local interface SMTP server
     ns_param relay       $smtprelay            ;# upstream MTA or mail relay (e.g. localhost:25)
-    ns_param spamd       localhost             ;# spamd/spamassassin daemon for filtering
 
+    #------------------------------------------------------------------
+    # STARTTLS configuration (optional)
+    #------------------------------------------------------------------
+    # Enable STARTTLS and specify certificate chain files if needed.
+    #
+    # ns_param certificate "path/to/your/certificate-chain.pem"
+    # ns_param cafile      ""
+    # ns_param capath      ""
+
+    #------------------------------------------------------------------
+    # Callback handling
+    #------------------------------------------------------------------
     # SMTP processing callbacks (implemented in Tcl)
     ns_param initproc    smtpd::init
     ns_param rcptproc    smtpd::rcpt
     ns_param dataproc    smtpd::data
     ns_param errorproc   smtpd::error
 
-    # Domain handling
-    ns_param relaydomains "localhost"
-    ns_param localdomains "localhost"
+    # Accepted recipient domains for external clients.
+    ns_param relaydomains {localhost openacs.org}
+
+    # Trusted SMTP clients: loopback within this container.
+    ns_param localdomains {127.0.0.1 ::1}
+
+    #------------------------------------------------------------------
+    # alias resolving (optional)
+    #------------------------------------------------------------------
+    ns_param aliasformat        virtual ;# default; may be omitted
+    ns_param aliasfile          /var/www/openacs/etc/mail/virtual
+    ns_param aliasdomains       {openacs.org}
+    ns_param rejectunknownrecipients true
+
+    ns_param aliasproc          smtpd::resolvefilealiases
+
+    #------------------------------------------------------------------
+    # greylist handling (optional)
+    #------------------------------------------------------------------
+    ns_param recipientpolicyproc smtpd::greylist
+    ns_param greylistdelay       300
+    ns_param greylistretrywindow 14400
+    ns_param greylistlifetime    604800
+    ns_param greylistmaxentries  10000
 
     #------------------------------------------------------------------
     # Logging and log rotation
@@ -1630,22 +1662,10 @@ ns_section "ns/server/$server/module/nssmtpd" {
 
     # Optional rotation controls:
     #
-    # ns_param logmaxbackup   100             ;# default: 10; max number of rotated logs
+    # ns_param logmaxbackup   100             ;# default: 100; max number of rotated logs
     # ns_param logroll        true            ;# default: true; auto-rotate logs
     # ns_param logrollonsignal true           ;# default: false; rotate on SIGHUP
     # ns_param logrollhour    0               ;# default: 0; hour of day for rotation
-
-    #------------------------------------------------------------------
-    # STARTTLS configuration (optional)
-    #------------------------------------------------------------------
-    # Enable STARTTLS and specify certificate chain files if needed.
-    #
-    # ns_param certificate "path/to/your/certificate-chain.pem"
-    # ns_param cafile      ""
-    # ns_param capath      ""
-    #
-    # Cipher suite selection (TLS 1.2 and below):
-    # ns_param ciphers     "..."
 }
 
 
