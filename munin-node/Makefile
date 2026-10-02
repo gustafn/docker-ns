@@ -28,7 +28,7 @@ $(MUNIN_PLUGINS_NS_REV_FILE):
 	if [ ! -f "$@" ] || [ "$$rev" != "$$(cat "$@")" ]; then \
 	  echo "$$rev" > "$@"; \
 	fi
-MUNIN_PLUGINS_NS_REV := $(shell test -f $(MUNIN_PLUGINS_NS_REV_FILE) && cat $(MUNIN_PLUGINS_NS_REV_FILE))
+MUNIN_PLUGINS_NS_REV = $(shell test -f $(MUNIN_PLUGINS_NS_REV_FILE) && cat $(MUNIN_PLUGINS_NS_REV_FILE))
 
 INGREDIENTS = \
   $(DOCKERFILE) \
