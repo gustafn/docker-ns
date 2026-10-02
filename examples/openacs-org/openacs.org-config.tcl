@@ -1653,6 +1653,19 @@ ns_section ns/server/$server/module/nssmtpd {
     ns_param greylistlifetime    604800
     ns_param greylistmaxentries  10000
 
+    # ns_param greylistspfexceptions {
+    #     {noreply-dmarc-support@google.com webmaster@openacs.org}
+    # }
+
+    #
+    # In case, the spfquery binary is available, activate SPF checking.
+    # Newer versions of install-ns.sh provide a uniform link for
+    # major distributions.
+    #
+    if {[file executable [file join [ns_info bindir] spfquery]]} {
+        ns_param spfproc smtpd::spfquery
+    }
+
     #------------------------------------------------------------------
     # Logging and log rotation
     #------------------------------------------------------------------
