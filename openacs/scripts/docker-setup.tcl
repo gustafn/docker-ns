@@ -85,9 +85,6 @@ puts $F {
     # The returned mappings can be used to whitelist additional Host header
     # values (e.g., "host:port") for a given server configuration.
     #
-    # Legacy implementation for setups where the docker environment does not
-    # provide this helper.
-    #
     proc ::docker::map_external_address_to_server {server port} {
         set label "$port/tcp"
         set s [ns_set create]
@@ -97,12 +94,27 @@ puts $F {
         } {
             return $s
         }
-        foreach {k info} $::docker::containerMapping {
-            if {$k ne $label} continue
-            set host    [dict get $info host]
-            set pubport [dict get $info port]
-            if {[ns_ip valid $host] && [ns_ip inany $host]} continue
-            ns_set put $s $server ${host}:${pubport}
+        # The generated mapping list can have multiple bindings for one label.
+        foreach {key mapping} $::docker::containerMapping {
+            if {$key ne $label} {
+                continue
+            }
+            set host [dict get $mapping host]
+            set pubport [dict get $mapping port]
+            if {[string index $host 0] eq "\["} {
+                set host [dict get [ns_parsehostport -strict $host] host]
+            }
+            if {[ns_ip valid $host]} {
+                if {[ns_ip inany $host]} {
+                    continue
+                }
+                if {[string first : $host]>=0} {
+                    set host [format {[%s]} $host]
+                }
+            }
+            if {$host ne ""} {
+                ns_set put $s $server ${host}:${pubport}
+            }
         }
         return $s
     }
